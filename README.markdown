@@ -84,7 +84,7 @@ Linux is required for its transcoding services. MusicRest has been tested under 
 * [ImageMagick](http://www.imagemagick.org/script/index.php) (8:6.6.9.7-5ubuntu or better)
 * [Timidity](https://wiki.archlinux.org/index.php/Timidity)  (2.13.2 or better)
 
-The _scripts_ directory contains shell scripts that invoke the transcoding services.  You must be sure to make these executable  (_chmod +x_..) 
+The _scripts_ directory contains shell scripts that invoke the transcoding services.  You must be sure to make these executable  ( _chmod +x_ ) 
 
 #### _Configuration_
 
