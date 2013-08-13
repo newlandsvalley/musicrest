@@ -16,7 +16,7 @@ Although MusicRest is potentially useful for any genre of music, the current rel
 
 #### _URL Scheme_
 
-URL path segments in italics represent fixed text; those in bold type are variable.  For example, the text 'genre' is fixed whilst '**agenre**' can be any of _irish, scandi, scottish or klezmer_. The following URLs access or maintain music:
+URL path segments in italics represent fixed text; those in bold type are variable.  For example, the text 'genre' is fixed whilst **agenre** can be any of _irish, scandi, scottish or klezmer_. The following URLs access or maintain music:
 
 *  GET / _musicrest_ / _genre_ - get a list of genres.
 
