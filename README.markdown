@@ -6,6 +6,8 @@ This is a RESTful web service which allows you to upload traditional tunes in [A
 
 2. _Explicit URL_.  You append the name of the requested content type to the basic URL of the tune. For example, if you append */wav* it will be returned in *wav* format (irrespective of the contents of the Accept header).
 
+Author: John Watson <john.watson@gmx.co.uk>
+
 ### _Usage_
 
 #### _Genres and Rhythms_
