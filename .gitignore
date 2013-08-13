@@ -1,0 +1,12 @@
+/.idea/
+/project/boot/
+/project/plugins/project
+/conf/hosted.conf
+/conf/musicrest-local.conf
+target/
+cache/
+lib_managed/
+src_managed/
+test-output/
+*.iml
+build.sbt.1.1M8

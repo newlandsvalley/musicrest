@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Play a Tune</title>
+  <meta name="play a tune" content="">
+  <script src="js/jquery-2.0.3.js"></script>   
+  <script src="js/slider.js"></script>   
+</head>
+<body>
+   <div  id="tunediv"  role="main" class="main" >  
+       <h2>Instructions</h2>
+       <p>1 - set the instrument</p>   
+       <select id="instrument" >
+         <option value="piano">piano</option>
+         <option value="harpsichord">harpsichord</option>
+         <option value="accordion">accordion</option>
+         <option value="cello">cello</option>
+         <option value="clarinet">clarinet</option>
+         <option value="dulcimer">dulcimer</option>
+         <option value="flute">flute</option>
+         <option value="guitar">guitar</option>
+         <option value="harp">harp</option>
+         <option value="bandoneon">bandoneon</option>
+      </select>
+       <p>2 - set the tempo</p>   
+       <div id ="slider">
+           <input id="slide" type="range" min="40" max="240" value="120" step="10" onchange="updateSlider(this.value)" 
+                 onmouseup="reloadPlayer()"/>
+	   <p class="note">tempo: 1/4=<span id="tempo">120</span></p>
+       </div>
+       <p>3 - play the tune</p>  
+        <audio controls preload = "none" id="audioPlayer"  >
+          <h2>play it</h2>
+          <source id="audioSource" base="http://localhost:8080/musicrest/genre/irish/tune/black+rosie-jig/wav" src="http://localhost:8080/musicrest/genre/irish/tune/black+rosie-jig/wav" type="audio/wav" >
+          Your browser does not support the audio tag!
+        </audio>
+       </div>
+    </div>
+</body>
+</html>

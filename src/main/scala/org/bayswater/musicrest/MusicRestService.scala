@@ -1,0 +1,475 @@
+/*
+ * Copyright (C) 2011-2013 org.bayswater
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.bayswater.musicrest
+
+import java.net.URLDecoder
+import java.io.File
+import akka.actor.Actor
+import spray.routing._
+import directives.DebuggingDirectives._
+import spray.http._
+import spray.http.HttpHeaders._
+import MediaTypes._
+import spray.routing.authentication.BasicAuth
+import spray.util.{LoggingContext, SprayActorLogging}
+
+import scala.concurrent.{ ExecutionContext, Future, Promise }  
+import scala.concurrent.ExecutionContext.Implicits.global
+
+import scalaz.Validation
+import scalaz.syntax.validation._
+
+import org.bayswater.musicrest.abc._
+import org.bayswater.musicrest.abc.Tune._
+import org.bayswater.musicrest.abc.AbcPost._
+import org.bayswater.musicrest.abc.AlternativeTitlePost._
+import org.bayswater.musicrest.model.{TuneModel,User,UserRef}
+import org.bayswater.musicrest.cache.Cache._
+import org.bayswater.musicrest.tools.Email
+import org.bayswater.musicrest.authentication.Backend._
+import org.bayswater.musicrest.RequestResponseLogger._
+
+// we don't implement our route structure directly in the service actor because
+// we want to be able to test it independently, without having to spin up an actor
+class MusicServiceActor extends Actor with MusicRestService {
+
+  // the HttpService trait defines only one abstract member, which
+  // connects the services environment to the enclosing actor or test
+  def actorRefFactory = context
+  
+  // this actor only runs our route, but you could add
+  // other things here, like request stream processing
+  // or timeout handling
+  def receive = runRoute(musicRestRoute)
+}
+
+/** This is (I hope) a temporary fix.  At the moment all processing errors are saved as validation
+ *  failures, but then, disappointingly, converted to MusicRestExceptions.  If we do nothing,
+ *  the default exception handler just translates them into bland 500 or 400 errors with no explanatory
+ *  error text.  So instead, we wrap our routes in our own exception handler which builds a more
+ *  comprehensible HTTP status message.
+ * 
+ */
+object MusicRestService {
+  import spray.http.StatusCodes.BadRequest
+  
+  case class MusicRestException(message: String) extends RuntimeException(message, null)
+  
+  implicit def myExceptionHandler(implicit log: LoggingContext) =
+    ExceptionHandler {
+      case e: MusicRestException => ctx =>
+        log.info(s"Error processing request: ${e.getMessage} ${ctx.request}")
+        // frame the message so we can distinguish our text from HTTPP's
+        ctx.complete(BadRequest, e.getMessage)
+  }
+}
+
+
+/** MusicRestService:
+ *  
+ *  musicRestRoute = tuneRoute ~ userRoute
+ *  
+ */
+trait MusicRestService extends HttpService  {    
+  
+  import MusicRestService.myExceptionHandler
+  
+  val supportedGenres = SupportedGenres
+  val logger = implicitly[LoggingContext]
+  println(s"log debug?: ${logger.isDebugEnabled} info?: ${logger.isInfoEnabled} ")
+
+  val begin = {
+    establishGenres
+  }
+  
+ 
+  /* this trait defines our service behaviour independently from the service actor
+   *  
+   * a route that deal with genres and tunes in their various guises 
+   *  
+   * overall route is musicRestRoute = tuneRoute ~ userRoute
+   */
+  val tuneRoute =  
+    handleExceptions(myExceptionHandler) { logRequestResponse(rrlogger) {
+  // val tuneRoute =  
+    path("musicrest") {
+      get {
+          // logger.info("welcome")
+          complete (Welcome())
+      }
+    } ~   
+    path("musicrest" / "config" ) {
+      get {
+          authenticate(BasicAuth(AdminAuthenticator, "musicrest")) { user =>     
+             _.complete("config: scriptDir: " + MusicRestSettings.scriptDir + 
+                              " abcDirCore: " + MusicRestSettings.abcDirCore +
+                              " pdfDirCore: " + MusicRestSettings.pdfDirCore + 
+                              " abcDirPlay: " + MusicRestSettings.abcDirPlay +
+                              " wavDirPlay: " + MusicRestSettings.wavDirPlay + 
+                              " dbName: " + MusicRestSettings.dbName    +
+                              " genres: " + supportedGenres.genres.toString) 
+          }
+        }
+    } ~
+    // list of music genres
+    path("musicrest" / "genre") { 
+      get { ctx => ctx.complete(GenreList()) }  
+    } ~  
+    pathPrefix("musicrest" / "genre" ) {
+      path(Segment ) { genre =>
+        get { ctx => ctx.complete(RhythmList(genre)) }        
+      } ~
+      path(Segment / "exists" ) { genre => 
+        // return true if the genre exists (is supported)
+        get {   
+          respondWithMediaType(`text/plain`) {
+            val exists = SupportedGenres.isGenre(genre)
+            complete(exists.toString)
+          } 
+        } 
+      } ~     
+      // within genre
+      path(Segment / "tune"  ) { genre =>
+        post {     
+          authenticate(BasicAuth(UserAuthenticator, "musicrest")) { user =>     
+            entity(as[AbcPost]) { post =>  {
+              val abcSubmission = AbcSubmission(post.notes.lines, genre, user.username)
+              val validAbc:Validation[String, Abc] = abcSubmission.validate
+              val response:Validation[String, TuneRef] = for {
+                 g <- GenreList.validate(genre)
+                 abc <- validAbc 
+                 // we will try to transcode immediately to png which might cause further errors
+                 t <- abc.to(`image/png`)
+                 success <- abc.insertIfNew(genre)
+              } yield {success}
+              _.complete(response)
+              }
+            }
+          }
+        } ~
+        // list of tunes within the genre
+        parameters('sort ? "alpha", 'page ? 1, 'size ? MusicRestSettings.defaultPageSize) { (sort, page, size) =>
+          get {  
+            val tuneList = TuneList(genre, sort, page, size)
+            val totalPages = (tuneList.totalResults + size - 1) / size 
+            respondWithHeader(paginationHeader(page, totalPages)) {
+              ctx => ctx.complete(tuneList) 
+              }
+            }
+        } 
+      } ~        
+      path(Segment / "tune" / Segment) { (genre, tuneEncoded) =>  
+        // get a tune (in whatever format)         
+        get { 
+          val tune = java.net.URLDecoder.decode(tuneEncoded, "UTF-8")
+            complete(Tune(genre, tune) ) 
+        } ~
+        delete {       
+          authenticate(BasicAuth(UserAuthenticator, "musicrest")) { user =>     
+            val tune = java.net.URLDecoder.decode(tuneEncoded, "UTF-8")  
+            val submitter = TuneModel().getSubmitter(genre, tune)
+            logger.info(s"original submitter of $tune was $submitter - delete requester: ${user.username}")
+            // allow the administrator or the original submitter to delete the tune
+            val authorized = (submitter, user.username) match {
+              case (Some(_), "administrator") => true
+              case (Some(s), u) => s == u
+              case _ => false
+            }
+            if (authorized) {
+              // delete from the file systen cache
+              val dir = new File(MusicRestSettings.transcodeCacheDir)
+              clearTuneFromCache(dir, tune)
+              // delete from the database
+              val result = TuneModel().delete(genre, tune)
+              _.complete(result)
+            }
+            else {
+              // we'll use the horrible exception mechanism for the time being to get
+              // a proper HTTP response
+              val message = 
+                if (submitter.isDefined) {
+                  s"You can only delete tunes that you originally submitted"
+                }
+                else {
+                  s"No such tune: $tune"
+                }
+              throw new MusicRestService.MusicRestException(message)
+            }
+          }
+        }
+      } ~
+      path(Segment / "tune" / Segment / "exists" ) { (genre, tuneEncoded) => 
+        // return true if the tune exists in the database       
+        get {   
+          respondWithMediaType(`text/plain`) {
+            val tuneNotes = java.net.URLDecoder.decode(tuneEncoded, "UTF-8")
+            complete(Tune(genre, tuneNotes).exists )
+          } 
+        } 
+      } ~     
+      path(Segment / "tune" / Segment / "abc" ) { (genre, tuneEncoded) => 
+        // get a tune (in abc defined by abc.vnd (plain text) format)         
+        get {   
+          respondWithMediaType(Tune.AbcType) {
+            val tuneNotes = java.net.URLDecoder.decode(tuneEncoded, "UTF-8")
+            complete(Tune(genre, tuneNotes).asAbc )
+          } 
+        } ~
+        post {
+          // add an alternative tune title 
+          authenticate(BasicAuth(UserAuthenticator, "musicrest")) { user =>     
+            entity(as[AlternativeTitlePost]) { post =>  
+              val tune = java.net.URLDecoder.decode(tuneEncoded, "UTF-8")
+              val update = TuneModel().addAlternativeTitle(genre, tune, post.title) 
+              complete(update)
+            }
+          }
+        }
+      } ~
+      path(Segment / "tune" / Segment / "html" ) { (genre, tuneEncoded) => 
+        // get a tune (in abc represented in html format)         
+        get {   
+          respondWithMediaType(`text/html`) {
+            val tuneNotes = java.net.URLDecoder.decode(tuneEncoded, "UTF-8")
+            complete(Tune(genre, tuneNotes).asHtml )
+          } 
+        } 
+      } ~     
+      path(Segment / "tune" / Segment / "wav" ) { (genre, tuneEncoded) => 
+        parameters ('instrument ? "piano", 'transpose ? 0, 'tempo ? "120") { (instrument, transpose, tempo) =>
+          get { 
+            val tune = java.net.URLDecoder.decode(tuneEncoded, "UTF-8")
+            // System.out.println(s"got wav request for $tune instrument %instrument, transpose $transpose, tempo $tempo")
+            val validTune = Tune.tuneToWav(Tune(genre, tune), instrument, transpose, tempo)            
+            validTune.fold (
+               e => _.complete(e),  
+               s => getFromFile(s)  
+            )  
+          }
+        } 
+      }  ~
+      /**  Get a temporary tune in png format (resulting from a try transcode */ 
+      path(Segment / "tune" / Segment / "temporary" / "png"  ) { (genre, tuneEncoded) => 
+        // get a tune (in abc represented in html format)         
+        get {   
+          respondWithMediaType(`image/png`) {
+            val tuneName = java.net.URLDecoder.decode(tuneEncoded, "UTF-8")
+            // System.out.println("got request for temporary tune image for " + tuneName)
+            val futureImage: Future[Validation[String, BinaryImage]] =  Tune(genre, tuneName).asFutureTemporaryImage
+            _.complete(futureImage)
+          }
+        } 
+      }  ~
+      /** Get a tune in one of the supported binary file type formats (ps, pdf, midi )
+       *  This is an alternative URL which sidesteps content negotiation and just
+       *  returns the MIME type implied by the file extension (or an error if it's not supported)
+       */      
+      path(Segment / "tune" / Segment / Segment ) { (genre, tuneEncoded, fileType) =>  
+        get {     
+          val contentTypeOpt = getContentTypeFromFileType(fileType:String)
+          if (contentTypeOpt.isDefined) {
+            respondWithMediaType(contentTypeOpt.get.mediaType) { 
+              val tune = java.net.URLDecoder.decode(tuneEncoded, "UTF-8") 
+               // val futureBin:Future[Validation[String, BinaryImage]] = Tune(genre, tune).asFutureBinary(fileType) 
+               val futureBin = Tune(genre, tune).asFutureBinary(contentTypeOpt.get)
+               _.complete(futureBin)
+            }
+          }
+          else {
+           failWith(new Exception("Unrecognized file extension " + fileType))
+          }
+        } 
+      } ~    
+      path(Segment / "search"  ) { genre =>
+        parameters ('page ? "1", 'size ? MusicRestSettings.defaultPageSize.toString, 'sort ? "alpha") { (pageStr, sizeStr, sort) =>
+          get { ctx => 
+            // val searchParams = Map("page" -> pageStr, "size" -> sizeStr, "sort" -> sort)
+            val queryParams = ctx.request.uri.query.toMultiMap
+            // Spray now provides a MultiMap not a Map which we need to flatten
+            val searchParams = queryParams mapValues {x => x.head }
+            //System.out.println(s"search params $searchParams")
+            val page = pageStr.toInt
+            val size = sizeStr.toInt
+            // System.out.println("request for page: " + page)
+            val tuneList = TuneList(genre, searchParams, sort, page, size)
+            val totalPages = (tuneList.totalResults + size - 1) / size 
+            val headers = List(paginationHeader(page, totalPages))
+            ctx.complete(200, headers, tuneList) 
+            }  
+          }             
+      } ~ 
+      // one-off transcoding service
+      path(Segment / "transcode"  ) { genre =>
+        authenticate(BasicAuth(UserAuthenticator, "musicrest")) { user =>      
+          post { 
+            entity(as[AbcPost]) { post =>     
+              val abcSubmission = AbcSubmission(post.notes.lines, genre, user.username)
+              val validAbc:Validation[String, Abc] = abcSubmission.validate
+              val response:Validation[String, TuneRef] = for {
+                 g <- GenreList.validate(genre)
+                 abc <- validAbc 
+                 // we will try to transcode immediately to png which might cause further errors
+                 t <- abc.createTemporaryImageFile
+                 success <- abc.validTuneRef(genre)
+              } yield {success}
+              complete(response)
+            }
+          }
+        }
+      }          // end of path prefix musicrest/genre          
+    } 
+  } }  // end of exception handler and log
+
+  
+  /* route that deal with user maintenance */ 
+  val userRoute =
+    pathPrefix("musicrest") {
+      path("user") { 
+        post { 
+          /* create new user.  We will allow any user to submit his details, but if we detect that the administrator
+           * is the currently logged-in user, we assume he is creating a user of behalf of someone else
+           * and so we set up a pre-registered user
+           */
+          formFields('name, 'email, 'password, 'password2) { (name, email, password, password2) =>  {  
+            userName  { userOpt =>
+             // val vu:Validation[String, String] 
+             val doRegister = userOpt match {
+               case Some("administrator") => true
+               case _ => false
+             }
+             println(s"optional user is $userOpt is this the administrator $doRegister")
+             val vu  = for {
+               n <- User.checkName(URLDecoder.decode(name, "UTF-8"))
+               e <- User.checkEmail(URLDecoder.decode(email, "UTF-8"))
+               p <- User.checkPassword(URLDecoder.decode(password, "UTF-8"), URLDecoder.decode(password2, "UTF-8"))
+               _ <- User.checkUnique(URLDecoder.decode(name, "UTF-8"))
+               u <- User(n,e,p).insert(doRegister)
+               // we'll send a different email depending on whether or not the user is pre-registered
+               e <- Email.sendRegistrationMessage(User(n,e,p), doRegister)
+             } yield u    
+             complete(vu)
+             }
+            }
+          }
+        } ~ 
+        // list of users
+        parameters('page ? 1, 'size ? MusicRestSettings.defaultPageSize) { (page, size) =>
+          get {  
+            authenticate(BasicAuth(AdminAuthenticator, "musicrest")) { user =>   
+              val userList = UserList(page, size)
+              val totalPages = (userList.totalResults + size - 1) / size 
+              respondWithHeader(paginationHeader(page, totalPages)) {
+               ctx => ctx.complete(userList) 
+              }
+            }
+          }
+        }        
+      }~
+      // validate a user (i.e. after he's responded to an email)
+      path ("user" / "validate" / Segment ) { uuid => 
+        get {
+          val result = User.validate(uuid)
+          ctx => {
+            // debugRequestHeaders(ctx)
+            ctx.complete(result)    
+          }
+        }            
+      }~
+      // reset the password for a user
+      path("user" / "password" / "reset") { 
+        authenticate(BasicAuth(UserAuthenticator, "musicrest")) { user =>      
+          post {
+           formFields('password) { password =>        
+             // val vun:Validation[String, String] 
+             val vun = TuneModel().alterPassword(user.username, password) 
+             complete(vun)
+            }
+          }
+        }
+      }~    
+      // resend the password for a user
+      path("user" / "password" / "resend") { 
+        post { 
+          formFields('name) { (name) =>     
+             val vun:Validation[String, String] = for {
+               ur <- User.get(name)
+               e <- Email.sendPasswordMessage(ur)
+             } yield ur.name     
+             complete(vun)
+           }
+         }
+      } ~     
+      // check a user login 
+      path ("user" / "check" ) {  
+        get {     
+          authenticate(BasicAuth(UserAuthenticator, "musicrest")) { user =>    
+            _.complete("user is valid")    
+          }
+        } 
+      } ~
+      // some user maintenance functions
+      // delete user
+      path ("user" / Segment ) {  uname => 
+        delete {     
+          authenticate(BasicAuth(AdminAuthenticator, "musicrest")) { user =>   
+            val name = java.net.URLDecoder.decode(uname, "UTF-8")
+            val result = TuneModel().deleteUser(name)
+            complete(result)
+          }
+        } 
+      } 
+    }
+ 
+  /* overall route */
+  val musicRestRoute = tuneRoute ~ userRoute
+
+  def paginationHeader(page: Int, totalPages: Long) : HttpHeaders.RawHeader = 
+       HttpHeaders.RawHeader("Musicrest-Pagination", "[" + page + " of " + totalPages + "]")
+
+  /** return the content type from the file type (taken originally from the request URL) */
+  private def getContentTypeFromFileType(fileType:String): Option[ContentType] = {
+    val supportedTypes: Map[String, ContentType] = Map( "png" -> ContentType(`image/png`),
+                                                        "pdf" -> ContentType(`application/pdf`), 
+                                                        "midi" -> ContentType(`audio/midi`), 
+                                                        "ps" -> ContentType(`application/postscript`) )
+     supportedTypes.get(fileType)    
+  } 
+
+  def debugMessage(text: String) = 
+            <html>
+              <body>
+                <h1>{text}</h1>
+              </body>
+            </html>
+
+  /** establish the genres and their rhythms */
+  def establishGenres(implicit log: LoggingContext) =  {    
+    supportedGenres.createGenreSubdirectories()
+    log.info(s"genres: ${supportedGenres.rhythmMap}")
+  }
+  
+ 
+  /** directive for extracting the logged in user name */
+  val userName = optionalHeaderValue { 
+      case Authorization(BasicHttpCredentials(user, _)) =>  Some(user)
+  } 
+      
+        
+        
+   
+
+}
