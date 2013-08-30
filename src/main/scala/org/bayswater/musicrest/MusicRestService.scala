@@ -340,28 +340,30 @@ trait MusicRestService extends HttpService  {
     pathPrefix("musicrest") {
       path("user") { 
         post { 
+          println("new user details posted")
           /* create new user.  We will allow any user to submit his details, but if we detect that the administrator
            * is the currently logged-in user, we assume he is creating a user of behalf of someone else
            * and so we set up a pre-registered user
            */
           formFields('name, 'email, 'password, 'password2) { (name, email, password, password2) =>  {  
-            userName  { userOpt =>
-             // val vu:Validation[String, String] 
-             val doRegister = userOpt match {
-               case Some("administrator") => true
-               case _ => false
-             }
-             println(s"optional user is $userOpt is this the administrator $doRegister")
-             val vu  = for {
-               n <- User.checkName(URLDecoder.decode(name, "UTF-8"))
-               e <- User.checkEmail(URLDecoder.decode(email, "UTF-8"))
-               p <- User.checkPassword(URLDecoder.decode(password, "UTF-8"), URLDecoder.decode(password2, "UTF-8"))
-               _ <- User.checkUnique(URLDecoder.decode(name, "UTF-8"))
-               u <- User(n,e,p).insert(doRegister)
-               // we'll send a different email depending on whether or not the user is pre-registered
-               e <- Email.sendRegistrationMessage(User(n,e,p), doRegister)
-             } yield u    
-             complete(vu)
+            userName  { userOpt => {
+               // val vu:Validation[String, String] 
+               val doRegister = userOpt match {
+                 case Some("administrator") => true
+                 case _ => false
+               }
+               println(s"optional user is $userOpt is this the administrator $doRegister")
+               val vu  = for {
+                 n <- User.checkName(URLDecoder.decode(name, "UTF-8"))
+                 e <- User.checkEmail(URLDecoder.decode(email, "UTF-8"))
+                 p <- User.checkPassword(URLDecoder.decode(password, "UTF-8"), URLDecoder.decode(password2, "UTF-8"))
+                 _ <- User.checkUnique(URLDecoder.decode(name, "UTF-8"))
+                 u <- User(n,e,p).insert(doRegister)
+                 // we'll send a different email depending on whether or not the user is pre-registered
+                 e <- Email.sendRegistrationMessage(u, doRegister)
+               } yield u    
+               complete(vu)
+               } 
              }
             }
           }
@@ -465,7 +467,14 @@ trait MusicRestService extends HttpService  {
  
   /** directive for extracting the logged in user name */
   val userName = optionalHeaderValue { 
-      case Authorization(BasicHttpCredentials(user, _)) =>  Some(user)
+      case Authorization(BasicHttpCredentials(user, _)) =>  {
+        logger.info(s"new user: $user is the logged in user")
+        Some(user)
+      }
+      case _ => {
+        logger.info("new user: no user logged in")
+        None
+      }
   } 
       
         

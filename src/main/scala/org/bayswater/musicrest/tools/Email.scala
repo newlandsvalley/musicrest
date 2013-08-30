@@ -21,7 +21,7 @@ import javax.mail.internet._
 import java.util.Properties._
 import scalaz._
 import Scalaz._
-import org.bayswater.musicrest.model.{User, UserRef}
+import org.bayswater.musicrest.model.{User, UnregisteredUser, UserRef}
 import org.bayswater.musicrest.MusicRestSettings
 
 object Email {
@@ -54,8 +54,9 @@ object Email {
     Transport.send(message)  
   }
   
-  def sendRegistrationMessage(user:User, isPreRegistered: Boolean): Validation[String, String] = {
-    val url = "http://localhost:8080/musicrest/user/validate/" + user.uuid
+  def sendRegistrationMessage(user:UnregisteredUser, isPreRegistered: Boolean): Validation[String, String] = {
+    val url=s"http://${musicRestSettings.serverHost}:${musicRestSettings.serverPort}/musicrest/user/validate/${user.uuid}"
+    // val url = "http://localhost:8080/musicrest/user/validate/" + user.uuid
     val subject = "Musicrest user validation"
     val message = if (isPreRegistered) { 
       "Thanks for signing up! \n\n" +

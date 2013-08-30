@@ -37,7 +37,7 @@ case class UserRef(name:String, email:String, password:String)
 /* an unregistered user is one who is on, or about to be placed on the user database
  * but who has not necessarily registered by clicking on the registration email link
  */
-case class UnregisteredUser(name: String, uuid: String)
+case class UnregisteredUser(name: String, email: String, password: String, uuid: String)
 
 object User {
   

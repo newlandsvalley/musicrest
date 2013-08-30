@@ -199,7 +199,7 @@ class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: Stri
       builder += "uuid" -> user.uuid
       builder += "valid" -> validity
       mongoCollection += builder.result
-      UnregisteredUser(user.name, user.uuid)
+      UnregisteredUser(user.name, user.email, user.password, user.uuid)
     }
   }  
  
@@ -210,7 +210,9 @@ class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: Stri
       case Some(userDBObject) => {
                                validateTheUser(userDBObject)
                                val uid = userDBObject.get("_id").asInstanceOf[String]
-                               UnregisteredUser(uid, uuid).success
+                               val email = userDBObject.get("email").asInstanceOf[String]
+                               val password = userDBObject.get("password").asInstanceOf[String]
+                               UnregisteredUser(uid, email, password, uuid).success
                                }
       case None => "No such user".fail
     }

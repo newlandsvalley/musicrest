@@ -12,7 +12,7 @@ Author: John Watson <john.watson@gmx.co.uk>
 
 #### _Genres and Rhythms_
 
-Although MusicRest is potentially useful for any genre of music, the current release is restricted to four - _Irish, Scandi, Scottish_ and _Klezmer_.  Each genre is configured with a set of standard rhythms for the genre - for example, whilst Irish uses _jigs, reels, hornpipes_ etc., Scandi uses _polska, marsch, schottis_ etc.  Tunes in each genre are kept in separate collections; when posting a new tune, you must supply an appropriate rhythm (ABC's  _M_ header).
+Although MusicRest is potentially useful for any genre of music, the current release is restricted to four - _Irish, Scandi, Scottish_ and _Klezmer_.  Each genre is configured with a set of standard rhythms for the genre - for example, whilst Irish uses _jigs, reels, hornpipes_ etc., Scandi uses _polska, marsch, schottis_ etc.  Tunes in each genre are kept in separate collections; when posting a new tune, you must supply an appropriate rhythm (ABC's  _R_ header).
 
 #### _URL Scheme_
 
@@ -77,7 +77,7 @@ Most lists may be obtained in xml, html or json format.
 
 #### _Runtime Dependencies_
 
-Linux is required for its transcoding services. MusicRest has been tested under Ubuntu 12.4. The following must be installed or present before the service can be run:
+Linux is required for its transcoding services. MusicRest has been tested under Ubuntu 12.04. The following must be installed or present before the service can be run:
 
 * a JVM (Java 1.6 or better)
 * [MongoDB](http://www.mongodb.org/)  (2.0.4 or better)
