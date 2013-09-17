@@ -108,6 +108,7 @@ Email is used simply to finish user registration or to remind them of passwords.
         host   = "localhost"
         port   = 27017
         dbName = "tunedb"
+        poolSize = 60
       }
       paging {
         defaultSize = 10

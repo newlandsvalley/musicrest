@@ -53,6 +53,7 @@ object MusicRestSettings {
   val dbName           = c getString       "database.dbName" 
   val dbHost           = c getString       "database.host" 
   val dbPort           = c getInt          "database.port"
+  val dbPoolSize       = c getInt          "database.poolSize"
   
   val mailHost         = c getString       "mail.host"
   val mailPort         = c getString       "mail.port"

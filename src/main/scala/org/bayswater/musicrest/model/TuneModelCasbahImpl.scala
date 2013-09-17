@@ -431,11 +431,13 @@ class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: Stri
       mongoDB.requestStart
       body
       mongoDB.getLastError.throwOnError
-      mongoDB.requestDone
       body.success
     }
     catch {
        case e: Exception  => e.getMessage().fail      
+    }
+    finally {
+      mongoDB.requestDone      
     }
 }
 

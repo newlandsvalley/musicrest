@@ -20,6 +20,7 @@ import org.bayswater.musicrest.abc.AbcMongo
 import org.bayswater.musicrest.abc.Abc
 import org.bayswater.musicrest.MusicRestSettings
 import com.mongodb.casbah.Imports._
+import com.mongodb.ServerAddress
 import scalaz.Validation
 
 
@@ -105,8 +106,16 @@ trait TuneModel {
 }
 
 object TuneModel {  
+  /** MongoConnection is very badly documented in Casbah.  Apparently it is in fact a pooled connection and
+   *  you can alter the size of the pool with MongoOptions.  (This is raw MongoDB behaviour).  Let's
+   *  experiment with just setting the pool size for the moment. 
+   */
   private val musicRestSettings = MusicRestSettings
+  private val mongoOptions = MongoOptions(true)
+  mongoOptions.connectionsPerHost = musicRestSettings.dbPoolSize
+  private val mongoConnection = MongoConnection(new ServerAddress(musicRestSettings.dbHost,  musicRestSettings.dbPort), mongoOptions)
+  private val casbahTuneModel = new TuneModelCasbahImpl(mongoConnection, musicRestSettings.dbName)
   // private val port = 27017
   // private val host = "localhost"
-  def apply(): TuneModel = new TuneModelCasbahImpl(MongoConnection(musicRestSettings.dbHost,  musicRestSettings.dbPort), musicRestSettings.dbName)
+  def apply(): TuneModel = casbahTuneModel
 }
