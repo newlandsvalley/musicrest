@@ -36,6 +36,7 @@ object MusicRestSettings {
   val transcodeCacheDir    = resolveRelativeDir(c getString "transcode.cacheDir")
   
   val cacheClearInterval  = c getInt          "transcode.cacheClearInterval"
+  val cacheMaxSizeMb      = c getInt          "transcode.cacheMaxSizeMb"
   
   // various subdirectories used by transcoder
   val dirCore          = transcodeCacheDir + "/core"

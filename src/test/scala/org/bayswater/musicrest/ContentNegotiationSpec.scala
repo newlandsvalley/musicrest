@@ -215,7 +215,7 @@ class ContentNegotiationSpec extends RoutingSpec with MusicRestService {
   
   def clearTuneCache = {
     val cacheDir = new java.io.File("cache/test")
-    clearCache(cacheDir)
+    clearCache(cacheDir, 0)
   }
 }
 

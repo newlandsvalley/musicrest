@@ -90,7 +90,7 @@ The _scripts_ directory contains shell scripts that invoke the transcoding servi
 
 #### _Configuration_
 
-This is by means of _musicrest.conf_ which must be supplied as a JVM -D startup parameter. The settings are largely self explanatory.  The cache directory for transcode indicates that the transcoding scripts are file-based and the results of such scripts are allowed to remain in the file cache for a time dependent on _cacheClearInterval_ (a time in minutes). Setting this to zero disables cache clearance. Get tune requests are served from the cache where this is possible. You probably need to clear the cache periodically because a large number of .wav files are generated.
+This is by means of _musicrest.conf_ which must be supplied as a JVM -D startup parameter. The settings are largely self explanatory.  The cache directory for transcode indicates that the transcoding scripts are file-based and the results of such scripts are allowed to remain in the file cache once the cache reaches its maximum allowed size for a time dependent on _cacheClearInterval_ (a time in minutes). Setting this to zero disables cache clearance. Get tune requests are served from the cache where this is possible. You probably need to clear the cache periodically because a large number of .wav files are generated.
 
 Email is used simply to finish user registration or to remind them of passwords.  Email settings must of course be valid for the carrier in question.
 
@@ -103,6 +103,7 @@ Email is used simply to finish user registration or to remind them of passwords.
         scriptDir = "scripts"
         cacheDir = "cache/main"
         cacheClearInterval = 60
+        cacheMaxSizeMb = 2000
       }
       database {
         host   = "localhost"

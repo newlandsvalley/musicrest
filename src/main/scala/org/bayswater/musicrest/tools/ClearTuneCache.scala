@@ -23,7 +23,7 @@ object ClearTuneCache {
 
   def main(args: Array[String]): Unit = {
     val dir = new File("cache/test")
-    clearCache(dir)
+    clearCache(dir, 0)
   }
 
 }
