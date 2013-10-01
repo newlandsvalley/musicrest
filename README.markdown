@@ -54,6 +54,8 @@ URL path segments in italics represent fixed text; those in bold type are variab
 
 A user must be logged in before he can submit or test-transcode a tune.  Only the original submitter or the *administrator* user is allowed to delete tunes. There is also a fairly conventional set of URLs for user maintenance.
 
+Production of wav output is still supported, but deprecated.  It is too expensive to produce server-side unless you have a powerful server and a large data cache. 
+
 ##### URL Parameters
 
 URLs that return lists take optional paging parameters indicating the number of entries on a page and the identity of the page to display. The URL that requests a tune in _wav_ format takes optional parameters indicating the tunes's instrument, tempo and transposition.
@@ -90,9 +92,11 @@ The _scripts_ directory contains shell scripts that invoke the transcoding servi
 
 #### _Configuration_
 
-This is by means of _musicrest.conf_ which must be supplied as a JVM -D startup parameter. The settings are largely self explanatory.  The cache directory for transcode indicates that the transcoding scripts are file-based and the results of such scripts are allowed to remain in the file cache once the cache reaches its maximum allowed size for a time dependent on _cacheClearInterval_ (a time in minutes). Setting this to zero disables cache clearance. Get tune requests are served from the cache where this is possible. You probably need to clear the cache periodically because a large number of .wav files are generated.
+This is by means of _musicrest.conf_ which must be supplied as a JVM -D startup parameter. The settings are largely self explanatory.  The cache directory for transcode indicates that the transcoding scripts are file-based and the results of such scripts are allowed to remain in the file cache. Once the cache reaches its maximum allowed size for a time dependent on _cacheClearInterval_ (a time in minutes) then the cache is cleared. Setting this to zero disables cache clearance. Get tune requests are served from the cache where this is possible. If you are supporting the generatiopn of _wav_ responses, you probably need to clear the cache periodically because of the large number of bulky .wav files that can be generated.
 
 Email is used simply to finish user registration or to remind them of passwords.  Email settings must of course be valid for the carrier in question.
+
+_corsOrigin_ allows the nominated server to make available scripts that use  XmlHttpRequest to access midi content in the MusicRest server.
 
     musicrest {
       server {
@@ -121,6 +125,9 @@ Email is used simply to finish user registration or to remind them of passwords.
         password = "change1t"
         fromAddress = "youraccount@gmail.com"
       }
+      security {
+        corsOrigin = "http://localhost:9000"
+      }
     }
 
 #### _Web Front End_
@@ -131,19 +138,19 @@ There is no web front end included within this project.  However [tradtunedb](ht
 
 #### _Source Code_
 
-Code is written in scala and built with sbt.  Here are the major dependencies:
+Code is written in scala and built with sbt.  Currently the master branch is built using Spray Nightlies because we require CORS support:
     
-    "io.spray"            %   "spray-can"          % "1.2-M8",
-    "io.spray"            %   "spray-routing"      % "1.2-M8",
-    "io.spray"            %   "spray-caching"      % "1.2-M8",
-    "io.spray"            %   "spray-testkit"      % "1.2-M8",
-    "com.typesafe.akka"   %%  "akka-actor"         % "2.2.0-RC1",
-    "com.typesafe.akka"   %%  "akka-testkit"       % "2.2.0-RC1",
-    "org.scalaz"          %   "scalaz-core_2.10"   % "7.0.0",
-    "org.mongodb"         %%  "casbah"             % "2.6.2",
-    "net.liftweb"         %%  "lift-json"          % "2.5",
-    "javax.mail"          %   "mail"               % "1.4",
-    "org.specs2"          %%  "specs2"             % "1.14" % "test"
+  "io.spray"            %   "spray-can"          % "1.1-20130927",
+  "io.spray"            %   "spray-routing"      % "1.1-20130927",
+  "io.spray"            %   "spray-caching"      % "1.1-20130927",
+  "io.spray"            %   "spray-testkit"      % "1.1-20130927",
+  "com.typesafe.akka"   %%  "akka-actor"         % "2.1.4",
+  "com.typesafe.akka"   %%  "akka-testkit"       % "2.1.4",
+  "org.scalaz"          %   "scalaz-core_2.10"   % "7.0.0",
+  "org.mongodb"         %%  "casbah"             % "2.6.2",
+  "net.liftweb"         %%  "lift-json"          % "2.5",
+  "javax.mail"          %   "mail"               % "1.4",
+  "org.specs2"          %%  "specs2"             % "1.14" % "test"
 
 Spray uses logback for logging, but there is an unfortunate dependency on slf4j brought in by Casbah.
 

@@ -216,6 +216,7 @@ object Tune {
   
   def exists(requestedTune: Tune): Boolean = {
     // try to get the requested tune from the database
+    // println(s"Existence check for genre: ${requestedTune.genre}, tune: ${requestedTune.name}" )
     val tuneOpt:Option[AbcMongo] = TuneModel().getTune(requestedTune.genre, requestedTune.name)
     tuneOpt.map(x => true).getOrElse(false)
   }

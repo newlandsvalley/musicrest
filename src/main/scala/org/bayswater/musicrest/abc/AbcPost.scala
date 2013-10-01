@@ -31,7 +31,9 @@ object AbcPost {
     
   implicit val AbcUnmarshaller =
     Unmarshaller[AbcPost](`application/x-www-form-urlencoded`) {
-      case HttpBody(contentType, buffer) => {         
+      // JMW M7 case HttpBody(contentType, buffer) => {         
+      case HttpEntity.NonEmpty(contentType, httpData) => {        
+        val buffer = httpData.toByteArray
         val abcPost =  new String(buffer, contentType.charset.nioCharset)
         // println(s"abc post: $abcPost")
         val encodedNotes = normalise(abcPost)
@@ -49,7 +51,9 @@ object AlternativeTitlePost {
   
   implicit val AlternativeTitleUnmarshaller =
     Unmarshaller[AlternativeTitlePost](`application/x-www-form-urlencoded`) {
-      case HttpBody(contentType, buffer) => {         
+      // JMW M7 case HttpBody(contentType, buffer) => {         
+      case HttpEntity.NonEmpty(contentType, httpData) => {    
+        val buffer = httpData.toByteArray        
         val altTitlePost =  new String(buffer, contentType.charset.nioCharset)
         // println(s"alt title post: $altTitlePost")
         val encodedTitle = normalise(altTitlePost)

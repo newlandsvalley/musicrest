@@ -23,6 +23,7 @@ import StatusCodes._
 import MediaTypes._
 import org.bayswater.musicrest.abc.Tune.AbcType
 import spray.http.HttpHeaders._
+import spray.routing.authentication._
 import scalaz.Validation
 import org.bayswater.musicrest.model.{TuneModel,User, UnregisteredUser}
 import org.bayswater.musicrest.TestData._
@@ -222,10 +223,24 @@ class MusicRestServiceSpec extends RoutingSpec with MusicRestService {
            mediaType === MediaTypes.`text/html`
            entityAs[String] must contain("User: mathias OK") 
           }
-    }
+    }   
+
+    /* temporary CORS test whilst we await the full Spray implementation */
+    "return CORS headers when requested for a midi tune" in {
+      Get("/musicrest/genre/irish/tune/noon+lasses-reel/midi") ~> addHeader("Origin", "http://localhost:9000")  ~> musicRestRoute ~> check {
+        println(s"CORS response headers ${headers}")
+        checkHeader(header("Access-Control-Allow-Origin"), "Access-Control-Allow-Origin")
+        checkHeader(header("Access-Control-Allow-Credentials"), "Access-Control-Allow-Credentials")
+      }
+    }       
     
  
   }
+   
+   def checkHeader(h: Option[spray.http.HttpHeader], expected: String): Boolean = h match {
+    case None => failure(s"No ${expected} header present")
+    case Some(h) => h.name must contain (expected)
+  }  
   
  def insertTune = {
    val dbName = "tunedbtest"

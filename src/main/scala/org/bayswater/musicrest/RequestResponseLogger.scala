@@ -16,7 +16,8 @@ object RequestResponseLogger {
       val outgoing = res match {
         case r: HttpResponse => { 
           r.entity match { 
-            case b: HttpBody =>  s"status: ${r.status} content type: ${b.contentType.mediaType}"
+            // JMW M8 case b: HttpBody =>  s"status: ${r.status} content type: ${b.contentType.mediaType}"
+            case b: HttpEntity.NonEmpty =>  s"status: ${r.status} content type: ${b.contentType.mediaType}"
             case _ => s"status: ${r.status}" 
           }          
         }

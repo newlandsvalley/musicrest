@@ -22,31 +22,35 @@ import spray.http._
 import spray.http.HttpHeaders._
 import StatusCodes._
 import spray.routing._
+import AuthenticationFailedRejection._
 import org.bayswater.musicrest.model.{TuneModel,User}
 import org.bayswater.musicrest.TestData._
 
 class AuthenticationSpec extends RoutingSpec with MusicRestService {
   def actorRefFactory = system
   
-  val before = {basicUsers; basicGenres; insertTunesForDeletion}
+  val before = {basicUsers; basicGenres; insertTunesForDeletion} 
+  
+  /* expected response challenge header */
+  val challenge = `WWW-Authenticate`(HttpChallenge("Basic", "musicrest"))
   
     
   "The MusicRestService" should {
     "request authentication parameters for posted tunes" in {  
        Post("/musicrest/genre/irish/tune") ~> musicRestRoute ~> check 
-         { rejection === AuthenticationRequiredRejection("Basic", "musicrest", Map.empty) }
+         { rejection === AuthenticationFailedRejection(CredentialsMissing, List(challenge)) }
     }  
     "request authentication parameters for test-transcode posted tunes" in {  
        Post("/musicrest/genre/irish/transcode") ~> musicRestRoute ~> check 
-         { rejection === AuthenticationRequiredRejection("Basic", "musicrest", Map.empty) }
+         { rejection === AuthenticationFailedRejection(CredentialsMissing, List(challenge)) }
     }
     "reject authentication for unknown credentials" in {
        Post("/musicrest/genre/irish/tune") ~>  Authorization(BasicHttpCredentials("foo", "bar")) ~> musicRestRoute ~> check 
-         { rejection === AuthenticationFailedRejection("musicrest") }
+         { rejection === AuthenticationFailedRejection(CredentialsRejected, List(challenge)) }
     }
     "reject authentication for known credentials  but as yet unvalidated users" in {
        Post("/musicrest/genre/irish/tune") ~>  Authorization(BasicHttpCredentials("mathias", "math1as")) ~> musicRestRoute ~> check 
-         { rejection === AuthenticationFailedRejection("musicrest") }
+         { rejection === AuthenticationFailedRejection(CredentialsRejected, List(challenge)) }
     }
     "allow authentication for known credentials (but reject the lack of a POST body as a bad request)" in {
        Post("/musicrest/genre/irish/tune") ~>  Authorization(BasicHttpCredentials("test user", "passw0rd1")) ~> musicRestRoute ~> check 
@@ -54,11 +58,11 @@ class AuthenticationSpec extends RoutingSpec with MusicRestService {
     }
     "don't allow normal users to delete tunes" in {
        Delete("/musicrest/genre/irish/tune/sometune") ~>  Authorization(BasicHttpCredentials("untrustworthy user", "passw0rd2")) ~> musicRestRoute ~> check 
-         { rejection === AuthenticationFailedRejection("musicrest") }
+         { rejection === AuthenticationFailedRejection(CredentialsRejected, List(challenge)) }
     }
     "don't allow normal users to view the user list" in {
        Get("/musicrest/user") ~>  Authorization(BasicHttpCredentials("test user", "passw0rd1")) ~> musicRestRoute ~> check 
-         { rejection === AuthenticationFailedRejection("musicrest") }
+         { rejection === AuthenticationFailedRejection(CredentialsRejected, List(challenge)) }
     }
     "allow administrators to delete tunes" in {
        Delete("/musicrest/genre/irish/tune/noon+lasses-reel") ~>  Authorization(BasicHttpCredentials("administrator", "adm1n1str80r")) ~> musicRestRoute ~> check 
@@ -70,13 +74,15 @@ class AuthenticationSpec extends RoutingSpec with MusicRestService {
     } 
     "reject authentication for unknown credentials in user check" in {
        Get("/musicrest/user/check") ~>  Authorization(BasicHttpCredentials("foo", "bar")) ~> musicRestRoute ~> check 
-         { rejection === AuthenticationFailedRejection("musicrest") }
+         { rejection === AuthenticationFailedRejection(CredentialsRejected, List(challenge)) }
     }
     "allow authentication for known credentials in user check" in {
        Get("/musicrest/user/check") ~>  Authorization(BasicHttpCredentials("test user", "passw0rd1")) ~> musicRestRoute ~> check 
          { entityAs[String] must contain("user is valid") }
     }
   }
+  
+  
   
    /** two different tunes submitted by test user */
    def insertTunesForDeletion = {

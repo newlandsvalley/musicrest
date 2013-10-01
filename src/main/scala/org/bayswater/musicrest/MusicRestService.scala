@@ -41,6 +41,7 @@ import org.bayswater.musicrest.model.{TuneModel,User,UserRef}
 import org.bayswater.musicrest.cache.Cache._
 import org.bayswater.musicrest.tools.Email
 import org.bayswater.musicrest.authentication.Backend._
+import org.bayswater.musicrest.authentication.CORSDirectives
 import org.bayswater.musicrest.RequestResponseLogger._
 
 // we don't implement our route structure directly in the service actor because
@@ -84,7 +85,7 @@ object MusicRestService {
  *  musicRestRoute = tuneRoute ~ userRoute
  *  
  */
-trait MusicRestService extends HttpService  {    
+trait MusicRestService extends HttpService with CORSDirectives {    
   
   import MusicRestService.myExceptionHandler
   
@@ -277,16 +278,23 @@ trait MusicRestService extends HttpService  {
       /** Get a tune in one of the supported binary file type formats (ps, pdf, midi )
        *  This is an alternative URL which sidesteps content negotiation and just
        *  returns the MIME type implied by the file extension (or an error if it's not supported)
+       *  
+       *  CORS.  We need to allow cross-origin requests from tradtunedb for midi tunes.  At the moment
+       *  we just return origin '*' as a rough and ready response whilst we await the full CORS
+       *  implementation in Spray.
        */      
       path(Segment / "tune" / Segment / Segment ) { (genre, tuneEncoded, fileType) =>  
-        get {     
+        get { 
           val contentTypeOpt = getContentTypeFromFileType(fileType:String)
           if (contentTypeOpt.isDefined) {
             respondWithMediaType(contentTypeOpt.get.mediaType) { 
-              val tune = java.net.URLDecoder.decode(tuneEncoded, "UTF-8") 
-               // val futureBin:Future[Validation[String, BinaryImage]] = Tune(genre, tune).asFutureBinary(fileType) 
-               val futureBin = Tune(genre, tune).asFutureBinary(contentTypeOpt.get)
-               _.complete(futureBin)
+              corsFilter(MusicRestSettings.corsOrigin) {
+              // respondWithCORSHeaders("*") {
+                val tune = java.net.URLDecoder.decode(tuneEncoded, "UTF-8") 
+                 // val futureBin:Future[Validation[String, BinaryImage]] = Tune(genre, tune).asFutureBinary(fileType) 
+                 val futureBin = Tune(genre, tune).asFutureBinary(contentTypeOpt.get)
+                 _.complete(futureBin)
+              }
             }
           }
           else {
@@ -340,7 +348,6 @@ trait MusicRestService extends HttpService  {
     pathPrefix("musicrest") {
       path("user") { 
         post { 
-          println("new user details posted")
           /* create new user.  We will allow any user to submit his details, but if we detect that the administrator
            * is the currently logged-in user, we assume he is creating a user of behalf of someone else
            * and so we set up a pre-registered user

@@ -61,6 +61,8 @@ object MusicRestSettings {
   val mailLogin        = c getString       "mail.login"
   val mailPassword     = c getString       "mail.password"
   val mailFromAddress  = c getString       "mail.fromAddress"  
+  
+  val corsOrigin       = c getString       "security.corsOrigin"
 
   def resolveRelativeDir(dir: String) = 
     if (dir.startsWith("/"))
