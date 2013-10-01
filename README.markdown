@@ -140,17 +140,17 @@ There is no web front end included within this project.  However [tradtunedb](ht
 
 Code is written in scala and built with sbt.  Currently the master branch is built using Spray Nightlies because we require CORS support:
     
-  "io.spray"            %   "spray-can"          % "1.1-20130927",
-  "io.spray"            %   "spray-routing"      % "1.1-20130927",
-  "io.spray"            %   "spray-caching"      % "1.1-20130927",
-  "io.spray"            %   "spray-testkit"      % "1.1-20130927",
-  "com.typesafe.akka"   %%  "akka-actor"         % "2.1.4",
-  "com.typesafe.akka"   %%  "akka-testkit"       % "2.1.4",
-  "org.scalaz"          %   "scalaz-core_2.10"   % "7.0.0",
-  "org.mongodb"         %%  "casbah"             % "2.6.2",
-  "net.liftweb"         %%  "lift-json"          % "2.5",
-  "javax.mail"          %   "mail"               % "1.4",
-  "org.specs2"          %%  "specs2"             % "1.14" % "test"
+    "io.spray"            %   "spray-can"          % "1.1-20130927",
+    "io.spray"            %   "spray-routing"      % "1.1-20130927",
+    "io.spray"            %   "spray-caching"      % "1.1-20130927",
+    "io.spray"            %   "spray-testkit"      % "1.1-20130927",
+    "com.typesafe.akka"   %%  "akka-actor"         % "2.1.4",
+    "com.typesafe.akka"   %%  "akka-testkit"       % "2.1.4",
+    "org.scalaz"          %   "scalaz-core_2.10"   % "7.0.0",
+    "org.mongodb"         %%  "casbah"             % "2.6.2",
+    "net.liftweb"         %%  "lift-json"          % "2.5",
+    "javax.mail"          %   "mail"               % "1.4",
+    "org.specs2"          %%  "specs2"             % "1.14" % "test"
 
 Spray uses logback for logging, but there is an unfortunate dependency on slf4j brought in by Casbah.
 
