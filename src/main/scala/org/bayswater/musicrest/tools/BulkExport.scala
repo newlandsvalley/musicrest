@@ -46,7 +46,7 @@ class BulkExport (val abcDir: String, val genre: String, dbName: String) {
     val tuneModel = new TuneModelCasbahImpl(MongoConnection(), dbName)
     tunes.foreach(t => {
       val tuneOpt =  for {
-        id <- t.get("_id")
+        id <- t.get(TuneModel.tuneKey)
         tune <- tuneModel.getTune(genre, id)
       } yield ( tune )
       tuneOpt match {

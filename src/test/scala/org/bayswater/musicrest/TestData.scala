@@ -122,6 +122,7 @@ g2>f2 e2d2 e2c2 | c2Bc d2c2 B2A2 | E3A A2B2 c2B2  | G2A2 A8 :|"""
     FormData(Map("password" -> URLEncoder.encode("passw0rd2", "UTF-8")))                
   
   def basicUsers = {
+   println("basicUsers")
    val dbName = "tunedbtest"
    val collection = "user"
    val tuneModel = TuneModel()
@@ -142,6 +143,7 @@ g2>f2 e2d2 e2c2 | c2Bc d2c2 B2A2 | E3A A2B2 c2B2  | G2A2 A8 :|"""
  }
  
  def basicGenres = {
+   println("basicGenres")
    GenreInsert.insertAllGenres("tunedbtest")
  }
  

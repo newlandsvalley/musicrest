@@ -28,7 +28,7 @@ class TuneList(i: Iterator[scala.collection.Map[String, String]], genre: String,
  
   def toJSON: String = {
     val quotedi = i.map( cols => cols.map( c => c match {
-      case ("_id", x) => TuneRef.formatId(x)
+      case (TuneModel.tuneKey, x) => TuneRef.formatId(x)
       case (a, b)     => TuneRef.formatJSON(a, b)
     }).mkString("{", ",", "}"))
     quotedi.mkString("{ \"tune\": [", ",", "], " + pageInfoJSON + "  }") 
@@ -80,20 +80,20 @@ class TuneList(i: Iterator[scala.collection.Map[String, String]], genre: String,
   
   /** format a returned tune from the db list as an html list item (not used) */
   private def buildHtmlLi(cols: scala.collection.Map[String, String]): String = {
-    val tuneId = parseId(cols("_id"))
+    val tuneId = parseId(cols(TuneModel.tuneKey))
     val urlPrefix = "genre/" + java.net.URLEncoder.encode(genre, "UTF-8") + "/tune/"
-    val id = java.net.URLEncoder.encode(cols("_id"), "UTF-8")
+    val id = java.net.URLEncoder.encode(cols(TuneModel.tuneKey), "UTF-8")
     "<li><a href=\""  +urlPrefix + id +"\" >"  + tuneId.name + "</a>" + " (" + tuneId.rhythm + ")"+ "</li>\n"
   }      
   
   /** format a returned tune from the db list as an html table row item */
   private def buildHtmlTr(cols: scala.collection.Map[String, String]): String = {
-    val tuneId = parseId(cols("_id"))
+    val tuneId = parseId(cols(TuneModel.tuneKey))
     val ts = cols("ts")
     val otherTitles = cols.getOrElse("otherTitles", "")
     val dateSubmitted = formatDate(ts.toLong)
     val urlPrefix = "genre/" + java.net.URLEncoder.encode(genre, "UTF-8") + "/tune/"
-    val id = java.net.URLEncoder.encode(cols("_id"), "UTF-8")
+    val id = java.net.URLEncoder.encode(cols(TuneModel.tuneKey), "UTF-8")
     "<tr><td><a href=\""  +urlPrefix + id +"\" >"  + tuneId.name + "</a>" + otherTitles +  "</td><td>" + tuneId.rhythm + "</td><td>" + dateSubmitted + "</td>"  + "</tr>\n" 
     //"<tr><td><a href=\""  +urlPrefix + id +"\" >"  + tuneId.name + "</a></td><td>" + tuneId.rhythm + "</td><td>" + dateSubmitted + "</td>"  + "</tr>\n"
   }    

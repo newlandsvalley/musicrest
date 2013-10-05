@@ -28,7 +28,7 @@ class DataModelSpec extends RoutingSpec with MusicRestService {
  
   def actorRefFactory = system
 
-  val before = {basicUsers; basicGenres; insertTunes} 
+  val before = {basicUsers; basicGenres; clearIrishTunes; insertTunes} 
   val tuneModel = TuneModel()
   
   "DataModel" should {
@@ -85,15 +85,23 @@ class DataModelSpec extends RoutingSpec with MusicRestService {
     }
     "return a list of tunes" in {      
       val genre = "irish"
+
+      // ensure we have a fig for a kiss in the db (which sorts first)
+      val validFigForaKiss = abcFor(figForaKiss)       
+      val result = for {
+         v <- validFigForaKiss
+         r <- tuneModel.insert(genre, v)
+       } yield (r)        
+        
       val tunes = tuneModel.getTunes(genre, "alpha", 1, 10)
       val t = tunes.next
-      val optId = t.get("_id")
+      val optId = t.get(TuneModel.tuneKey)
       optId match {
         case Some(id) => {
           val optTune = tuneModel.getTune(genre, id)
           optTune match  {
             case Some(tune) => {tune.titles(0) must_== "A Fig For A Kiss"
-                                tune.kvs("_id") must_== "a fig for a kiss-slip jig"
+                                tune.kvs(TuneModel.tuneKey) must_== "a fig for a kiss-slip jig"
                                }
             case None => failure(s"No tune found against listed id ${id}")
           }
@@ -106,13 +114,13 @@ class DataModelSpec extends RoutingSpec with MusicRestService {
       val reels = Map("R" -> "reel")
       val tunes = tuneModel.search(genre, reels, "alpha", 1, 10)
       val t = tunes.next
-      val optId = t.get("_id")
+      val optId = t.get(TuneModel.tuneKey)
       optId match {
         case Some(id) => {
           val optTune = tuneModel.getTune(genre, id)
           optTune match  {
             case Some(tune) => {tune.titles(0) must_== "Noon Lasses"              
-                                tune.kvs("_id") must_== "noon lasses-reel"
+                                tune.kvs(TuneModel.tuneKey) must_== "noon lasses-reel"
                                }
             case None => failure(s"No tune found against listed id ${id}")
           }
@@ -128,13 +136,14 @@ class DataModelSpec extends RoutingSpec with MusicRestService {
   }
   
   def insertTunes = {
+    println("insertTunes")
     val dbName = "tunedbtest"
     val tuneModel = TuneModel()
     tuneModel.delete("irish")
     val validNoonLasses = abcFor(noonLasses)
-    validNoonLasses.fold(e => println("unexpected error in test data: " + e), s => tuneModel.insert("irish", s))  
+    validNoonLasses.fold(e => println("unexpected error in test data: " + e), s => s.insertIfNew("irish"))  
     val validSpeedThePlough = abcFor(speedThePlough)
-    validSpeedThePlough.fold(e => println("unexpected error in test data: " + e), s => tuneModel.insert("irish", s))  
+    validSpeedThePlough.fold(e => println("unexpected error in test data: " + e), s => s.insertIfNew("irish"))  
   }
 
 }

@@ -50,20 +50,22 @@ class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: Stri
     val builder = MongoDBObject.newBuilder[String, String]
     builder += "T" -> abc.toAbcMongo.mongoTitles
     builder ++= abc.toAbcMongo.kvs    
-    builder += "_id" -> abc.id
+    builder += TuneModel.tuneKey -> abc.id
     mongoCollection += builder.result
     "Tune " + abc.name + " inserted into " + genre
   } 
   
   def exists(genre: String, id: String) : Boolean = {
     val mongoCollection = mongoConnection(dbname)(genre)
-    val opt = mongoCollection.findOneByID(id)
+    val q = MongoDBObject(TuneModel.tuneKey -> id) 
+    // val opt = mongoCollection.findOneByID(id)
+    val opt = mongoCollection.findOne(q)
     opt.isDefined
   }   
   
   def delete(genre: String, id: String) : Validation[String, String] = withMongoPseudoTransction {
     val mongoCollection = mongoConnection(dbname)(genre)
-    val result = mongoCollection.remove(MongoDBObject("_id" -> id))
+    val result = mongoCollection.remove(MongoDBObject(TuneModel.tuneKey -> id))
     "Tune " + id + " removed from " + genre    
   }   
 
@@ -123,7 +125,9 @@ class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: Stri
     
   private def getAttribute(genre: String, id: String, attribute: String): Option[String] = {
     val mongoCollection = mongoConnection(dbname)(genre)
-    val opt:Option[com.mongodb.DBObject] = mongoCollection.findOneByID(id)
+    val q = MongoDBObject(TuneModel.tuneKey -> id) 
+    val opt:Option[com.mongodb.DBObject] = mongoCollection.findOne(q)
+    // val opt:Option[com.mongodb.DBObject] = mongoCollection.findOneByID(id)
     /*
     if (!opt.isDefined) {
       log.debug(s"Not found: tune $id in genre $genre")
@@ -133,11 +137,30 @@ class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: Stri
     for { o <- opt } yield (o.get(attribute).asInstanceOf[String])    
   }  
   
-  def getTune(genre: String, id: String): Option[AbcMongo] = {
+  def getTune(genre: String, tuneid: String): Option[AbcMongo] = {
     val mongoCollection = mongoConnection(dbname)(genre)
-    val opt:Option[com.mongodb.DBObject] = mongoCollection.findOneByID(id)
-    
-    opt.flatMap {
+    // val opt:Option[com.mongodb.DBObject] = mongoCollection.findOneByID(tuneid)
+    val q = MongoDBObject(TuneModel.tuneKey -> tuneid) 
+    val opt:Option[com.mongodb.DBObject] = mongoCollection.findOne(q)
+    tuneObjectToAbcMongo(opt, genre)
+  }  
+  
+  /** get the tune by its GUID.  Currently a tune's GUID is its ID and so this implementation 
+   *  can be identical to that of getTune.  However, if we refactor the data model
+   *  so that we revert to Mongo's own GUIDs for the mongo _id field, these implementations
+   *  will differ
+   */
+  def getTuneByGUID(genre: String, guid: String): Option[AbcMongo] = {
+    val mongoCollection = mongoConnection(dbname)(genre)
+    val opt:Option[com.mongodb.DBObject] = mongoCollection.findOneByID(guid)
+    tuneObjectToAbcMongo(opt, genre)
+  }  
+  
+  /** Convert an optional Mongo Database Object representing a tune to a typesafe
+   *  optional AbcMongo object.
+   */
+  private def tuneObjectToAbcMongo(opto: Option[com.mongodb.DBObject], genre: String) : Option[AbcMongo] = 
+    opto.flatMap {
       x => {
         // separate out the title list from the other mapped pairs (all strings)
         val untypedValues = x.filter((kv) => kv._1 != "T")
@@ -149,7 +172,6 @@ class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: Stri
         Some(AbcMongo(titles, stringValues, genre))
       }
     }
-  }  
   
   /** add a new title to a tune */ 
   def addAlternativeTitle(genre: String, id: String, title: String) : Validation[String, String] = {
@@ -229,7 +251,7 @@ class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: Stri
     // println(s"result: $opt")
     opt.isDefined
   }
-  
+   
   /** get a list of users */
   def getUsers(page: Int, size: Int): Iterator[UserRef] = {    
     val mongoCollection = mongoConnection(dbname)("users")
@@ -265,12 +287,14 @@ class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: Stri
     // params.foreach(p => q+= p)
     
     val skip = (page -1) * size
-    // val fields = MongoDBObject("T" -> 1, "R" -> 2, "ts" -> 3)   
-    val fields = MongoDBObject("ts" -> 1, "T" -> 2)    
+    // val fields = MongoDBObject("T" -> 1, "R" -> 2, "ts" -> 3) 
+    // CHANGE FOR NEW DB
+    val fields = MongoDBObject(TuneModel.tuneKey -> 1, "ts" -> 2, "T" -> 3)     
+    //val fields = MongoDBObject("ts" -> 1, "T" -> 2)    
     val s = if (sort == "date")
       MongoDBObject("ts" -> -1)
     else
-      MongoDBObject("_id" -> 1)
+      MongoDBObject(TuneModel.tuneKey -> 1)
       
     for {
       x <- mongoCollection.find(q.result, fields).sort(s).skip(skip).limit(size)
@@ -407,21 +431,7 @@ class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: Stri
   }
   */  
   
-  /** imperative code 
-   * 
-  private def buildScalaList(from: MongoDBList) : List[String] = {      
-    println("converting MongoDBList to scala list")
-    val lb = new scala.collection.mutable.ListBuffer[String]
-    from.foreach {
-      case f: String => lb.append(f)
-    }
-    val list = lb.toList
-    println("final list: " + list)
-    list
-  }
-  */  
-   
-  private def allowedSearchParam(p: String): Boolean = List("_id", "T", "O", "M", "Q", "Z", "K", "R", "abc", "submitter").contains(p)
+  private def allowedSearchParam(p: String): Boolean = List(TuneModel.tuneKey, "T", "O", "M", "Q", "Z", "K", "R", "abc", "submitter").contains(p)
   
   /** Apparently, Mongo doesn't do transactions - this is the nearest we get - it ties the sequence of statements
    * to one particular Mongo connection and (we hope) raises an exception against that connection if things go wrong.
@@ -429,9 +439,9 @@ class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: Stri
   private def withMongoPseudoTransction [A] (body:  =>  A) : Validation[String, A] = 
     try {
       mongoDB.requestStart
-      body
+      val b = body
       mongoDB.getLastError.throwOnError
-      body.success
+      b.success
     }
     catch {
        case e: Exception  => e.getMessage().fail      

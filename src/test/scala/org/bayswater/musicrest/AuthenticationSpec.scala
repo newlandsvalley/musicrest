@@ -90,9 +90,9 @@ class AuthenticationSpec extends RoutingSpec with MusicRestService {
      val tuneModel = TuneModel()
      tuneModel.delete("irish")
      val validNoonLasses = abcFor(noonLasses,"test user")
-     validNoonLasses.fold(e => println("unexpected error in test data: " + e), s => tuneModel.insert("irish", s))  
+     validNoonLasses.fold(e => println("unexpected error in test data: " + e), s => s.insertIfNew("irish"))  
      val validSpeedThePlough = abcFor(speedThePlough,"test user")
-     validSpeedThePlough.fold(e => println("unexpected error in test data: " + e), s => tuneModel.insert("irish", s))  
+     validSpeedThePlough.fold(e => println("unexpected error in test data: " + e), s => s.insertIfNew("irish"))  
   }  
   
 }
