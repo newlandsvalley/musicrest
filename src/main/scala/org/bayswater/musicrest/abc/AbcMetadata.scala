@@ -182,7 +182,7 @@ class Abc(val titles: List[String], rhythm: String, headers: scala.collection.Ma
     
     def insertIfNew(genre: String): Validation[String, TuneRef] = 
       if (TuneModel().exists(genre, id)) {        
-        ("Tune: " + id + " already exists ").fail
+        ("Tune: " + id + " already exists").fail
       } 
       else {
         TuneModel().insert(genre, this) flatMap ( t => (TuneRef(name, tuneType, id)).success)
@@ -237,9 +237,10 @@ class AbcSubmission (genre: String,
                      abcDirectives: Option[String],
                      abcBody: String,
                      abcCount: Int
-                     ) {     
-    // def title:Option[String] = headers.get("T")   
-    def id:Option[String] = headers.get("_id") 
+                     ) {   
+    // def title:Option[String] = headers.get("T")     
+    // this is misleading - we don't have or use _id at this stage
+    // def id:Option[String] = headers.get("_id") 
     def tuneIndex:Option[String] = headers.get("X")
     def tuneKey:Option[String] = headers.get("K")
     def rhythm:Option[String] = headers.get("R")

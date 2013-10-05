@@ -92,7 +92,7 @@ The _scripts_ directory contains shell scripts that invoke the transcoding servi
 
 #### _Configuration_
 
-This is by means of _musicrest.conf_ which must be supplied as a JVM -D startup parameter. The settings are largely self explanatory.  The cache directory for transcode indicates that the transcoding scripts are file-based and the results of such scripts are allowed to remain in the file cache. Once the cache reaches its maximum allowed size for a time dependent on _cacheClearInterval_ (a time in minutes) then the cache is cleared. Setting this to zero disables cache clearance. Get tune requests are served from the cache where this is possible. If you are supporting the generatiopn of _wav_ responses, you probably need to clear the cache periodically because of the large number of bulky .wav files that can be generated.
+This is by means of _musicrest.conf_ which must be supplied as a JVM -D startup parameter. The settings are largely self explanatory.  The cache directory for transcode indicates that the transcoding scripts are file-based and the results of such scripts are allowed to remain in the file cache. Once the cache reaches its maximum allowed size for a time dependent on _cacheClearInterval_ (a time in minutes) then the cache is cleared. Setting this to zero disables cache clearance. Get tune requests are served from the cache where this is possible. If you are supporting the generation of _wav_ responses, you probably need to clear the cache periodically because of the large number of bulky .wav files that can be generated.
 
 Email is used simply to finish user registration or to remind them of passwords.  Email settings must of course be valid for the carrier in question.
 
