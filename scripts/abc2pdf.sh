@@ -50,7 +50,7 @@ echo "abc return: " $retcode
 # transcode from .ps to .pdf
 if [ $retcode -eq 0 ]; then
   echo "attempting to transcode ps to pdf"
-  convert -trim $workdir/$3.ps $pdfdir/$3.pdf
+  convert -auto-orient $workdir/$3.ps $pdfdir/$3.pdf
   retcode=$?
 fi
 
