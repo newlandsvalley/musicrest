@@ -23,6 +23,22 @@ import org.bayswater.musicrest.model.TuneModel
 
 case class TuneId(name: String, rhythm: String)
 
+object TuneId {
+  
+  def apply(id: String): TuneId = parseId(id)
+  
+  /** a tune id is of the form "name-genre".
+   *  Separate this into its components and return as a TuneId
+   */
+  private def parseId(id: String): TuneId = {
+    val hyphenPos = id.lastIndexOf('-')
+    hyphenPos match {
+      case -1 => TuneId(id, "unknown")
+      case n  => TuneId(id.slice(0,n), id.slice(n+1, id.length)) 
+    }
+  }
+}
+
 /** A List of tunes, each of which is indicated by a TuneRef */
 class TuneList(i: Iterator[scala.collection.Map[String, String]], genre: String, searchParams: Map[String, String], page: Int, size: Int) {
  
@@ -80,7 +96,7 @@ class TuneList(i: Iterator[scala.collection.Map[String, String]], genre: String,
   
   /** format a returned tune from the db list as an html list item (not used) */
   private def buildHtmlLi(cols: scala.collection.Map[String, String]): String = {
-    val tuneId = parseId(cols(TuneModel.tuneKey))
+    val tuneId = TuneId(cols(TuneModel.tuneKey))
     val urlPrefix = "genre/" + java.net.URLEncoder.encode(genre, "UTF-8") + "/tune/"
     val id = java.net.URLEncoder.encode(cols(TuneModel.tuneKey), "UTF-8")
     "<li><a href=\""  +urlPrefix + id +"\" >"  + tuneId.name + "</a>" + " (" + tuneId.rhythm + ")"+ "</li>\n"
@@ -88,7 +104,7 @@ class TuneList(i: Iterator[scala.collection.Map[String, String]], genre: String,
   
   /** format a returned tune from the db list as an html table row item */
   private def buildHtmlTr(cols: scala.collection.Map[String, String]): String = {
-    val tuneId = parseId(cols(TuneModel.tuneKey))
+    val tuneId = TuneId(cols(TuneModel.tuneKey))
     val ts = cols("ts")
     val otherTitles = cols.getOrElse("otherTitles", "")
     val dateSubmitted = formatDate(ts.toLong)
@@ -107,16 +123,7 @@ class TuneList(i: Iterator[scala.collection.Map[String, String]], genre: String,
     format.format(theDate)    
   }
   
-  /** a tune id is of the form "name-genre".
-   *  Separate this into its components and return as a TuneId
-   */
-  private def parseId(id: String): TuneId = {
-    val hyphenPos = id.lastIndexOf('-')
-    hyphenPos match {
-      case -1 => TuneId(id, "unknown")
-      case n  => TuneId(id.slice(0,n), id.slice(n+1, id.length)) 
-    }
-  }
+
   
 }
 

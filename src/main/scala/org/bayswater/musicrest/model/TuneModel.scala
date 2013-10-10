@@ -53,7 +53,10 @@ trait TuneModel {
   def getTunes(genre: String, sort: String, page: Int, size: Int):  Iterator[scala.collection.Map[String, String]]
   
   /** get the ABC notes for the supplied tune */
-  def getNotes(genre: String, id: String): Option[String]   
+  def getNotes(genre: String, id: String): Option[String]     
+  
+  /** get the ABC headers for the supplied tune */
+  def getAbcHeaders(genre: String, id: String): Option[String]   
   
   /** get the submitter of the tune */
   def getSubmitter(genre: String, id: String): Option[String]  
@@ -103,19 +106,22 @@ trait TuneModel {
   
   /** delete all users */
   def deleteUsers : Validation[String, String]  
+  
+  /** add an index on the genre */
+  def createIndex(genre: String)
 }
 
 object TuneModel {  
   
   /* Potential change for new DB representation for tunes.
    * 
-   * By default, Mongo automatically provides _id as a GUID which is implicit.  i.e. if we use tid as our unique id, then _id is also there
+   * By default, Mongo automatically provides _id as a GUID which is implicit.  i.e. if we use tid as our unique id, then _id is also there.
    * Up to version 1.1.2, we over-ride Mongos's _id with out own value (a concatenation of tune name and rhythm)
    * From version 1.1.3 we intend to revert to using Mongo's _id and supply our tid key in addition
    * This is the only line we need to alter to change the DB tune representation
    */
-  // val tuneKey = "tid"
-  val tuneKey = "_id"
+  val tuneKey = "tid"
+  // val tuneKey = "_id"
   /** MongoConnection is very badly documented in Casbah.  Apparently it is in fact a pooled connection and
    *  you can alter the size of the pool with MongoOptions.  (This is raw MongoDB behaviour).  Let's
    *  experiment with just setting the pool size for the moment. 

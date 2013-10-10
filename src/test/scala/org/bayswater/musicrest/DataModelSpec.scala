@@ -32,7 +32,7 @@ class DataModelSpec extends RoutingSpec with MusicRestService {
   val tuneModel = TuneModel()
   
   "DataModel" should {
-
+    
     "allow the insert of a new tune" in {
        val validFigForaKiss = abcFor(figForaKiss)
        
@@ -53,6 +53,16 @@ class DataModelSpec extends RoutingSpec with MusicRestService {
        } yield r2
        
        result.fold(e => e must_== ("Tune: fraher's jig-jig already exists"), s =>  failure("duplicate insertion allowed: "))
+    }
+    "ensure index is unique in" in {
+       val validFrahers = abcFor(noonLasses)
+       
+       val result = for {
+         v <- validFrahers
+         r <- tuneModel.insert("irish", v)
+       } yield r
+       
+       result.fold(e => e must contain ("duplicate key error"), s =>  failure("duplicate insertion allowed: "))
     }
     "assert a tune in the database exists" in {
       val result = tuneModel.exists("irish", "noon lasses-reel")
@@ -91,8 +101,8 @@ class DataModelSpec extends RoutingSpec with MusicRestService {
       val result = for {
          v <- validFigForaKiss
          r <- tuneModel.insert(genre, v)
-       } yield (r)        
-        
+       } yield (r)    
+       
       val tunes = tuneModel.getTunes(genre, "alpha", 1, 10)
       val t = tunes.next
       val optId = t.get(TuneModel.tuneKey)
@@ -132,7 +142,24 @@ class DataModelSpec extends RoutingSpec with MusicRestService {
       val reels = Map("R" -> "reel")
       val count = tuneModel.count("irish", reels)
       count must_== (2)
-    }
+    }   
+    "add an alternative title in" in {
+      val genre = "irish"
+      val id = "speed the plough-reel"
+      val newTitle = "Cronins"
+      val result = tuneModel.addAlternativeTitle(genre, id, newTitle)
+      // we now just return a reference to the tune if it succeeds
+      result.fold(e => failure("update failed: " + e), s => s must_== (s"Tune title ${newTitle} added") )    
+      val headersOption =  tuneModel.getAbcHeaders(genre, id)
+      headersOption match {
+        case None => failure("No ABC headers after update")
+        case Some(h) => {
+          h must contain("Speed The Plough")
+          h must contain("Cronins")
+          }
+        }
+      }  
+    
   }
   
   def insertTunes = {
@@ -144,6 +171,7 @@ class DataModelSpec extends RoutingSpec with MusicRestService {
     validNoonLasses.fold(e => println("unexpected error in test data: " + e), s => s.insertIfNew("irish"))  
     val validSpeedThePlough = abcFor(speedThePlough)
     validSpeedThePlough.fold(e => println("unexpected error in test data: " + e), s => s.insertIfNew("irish"))  
+    tuneModel.createIndex("irish")
   }
 
 }

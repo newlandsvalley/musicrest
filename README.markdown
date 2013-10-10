@@ -96,7 +96,7 @@ This is by means of _musicrest.conf_ which must be supplied as a JVM -D startup 
 
 Email is used simply to finish user registration or to remind them of passwords.  Email settings must of course be valid for the carrier in question.
 
-_corsOrigin_ allows the nominated server to make available scripts that use  XmlHttpRequest to access midi content in the MusicRest server.
+_corsOrigins_ allows any of the nominated servers to make available scripts that use  XmlHttpRequest to access midi content in the MusicRest server.
 
     musicrest {
       server {
@@ -126,7 +126,7 @@ _corsOrigin_ allows the nominated server to make available scripts that use  Xml
         fromAddress = "youraccount@gmail.com"
       }
       security {
-        corsOrigin = "http://localhost:9000"
+        corsOrigins = ["http://localhost:9000", "www.otherhost.org"]
       }
     }
 

@@ -32,6 +32,7 @@ class BulkImport(val abcDir: String, val dbName: String, val genre: String) {
     val dir = new File(abcDir)
     val fileList = dir.listFiles
     for (file <- fileList) { processFile(file) }
+    createIndex(genre)
    }
   
   private def processFile(file: File) {
@@ -45,8 +46,13 @@ class BulkImport(val abcDir: String, val dbName: String, val genre: String) {
   
   private def insertToMongo(abc: Abc) {  
     val tuneModel = new TuneModelCasbahImpl(MongoConnection(), dbName)
-    println ("inserting " + abc.name)
-    tuneModel.insert(genre, abc)
+    println ("inserting " + abc.name + " if it's new")
+    abc.insertIfNew(genre)
+  }
+  
+  private def createIndex(genre: String) {    
+    val tuneModel = new TuneModelCasbahImpl(MongoConnection(), dbName)
+    tuneModel.createIndex(genre)
   }
 }
 

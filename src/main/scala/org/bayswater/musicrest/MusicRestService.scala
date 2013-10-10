@@ -235,7 +235,7 @@ trait MusicRestService extends HttpService with CORSDirectives {
           authenticate(BasicAuth(UserAuthenticator, "musicrest")) { user =>     
             entity(as[AlternativeTitlePost]) { post =>  
               val tune = java.net.URLDecoder.decode(tuneEncoded, "UTF-8")
-              val update = TuneModel().addAlternativeTitle(genre, tune, post.title) 
+              val update = Abc.addAlternativeTitle(genre, tune, post.title) 
               complete(update)
             }
           }
@@ -288,7 +288,7 @@ trait MusicRestService extends HttpService with CORSDirectives {
           val contentTypeOpt = getContentTypeFromFileType(fileType:String)
           if (contentTypeOpt.isDefined) {
             respondWithMediaType(contentTypeOpt.get.mediaType) { 
-              corsFilter(MusicRestSettings.corsOrigin) {
+              corsFilter(MusicRestSettings.corsOrigins) {
               // respondWithCORSHeaders("*") {
                 val tune = java.net.URLDecoder.decode(tuneEncoded, "UTF-8") 
                  // val futureBin:Future[Validation[String, BinaryImage]] = Tune(genre, tune).asFutureBinary(fileType) 

@@ -152,6 +152,7 @@ class Abc(val titles: List[String], rhythm: String, headers: scala.collection.Ma
         sb.toString
     }    
    
+    // not used at the moment - just done as a db update
     def addAlternativeTitle(title: String) : Validation[String, Abc] = {
       if (titles.contains(title)) {
         // println("title: " + title + " already exists")
@@ -217,6 +218,15 @@ object Abc {
       case None => (s"Not Found: $requestedTune").fail
       case Some(m) => apply(m).success
     }    
+    
+    // add an alternative title to the tune
+    def addAlternativeTitle(genre: String, id: String, title: String) : Validation[String, TuneRef] = {
+      val response = TuneModel().addAlternativeTitle(genre, id, title) 
+      response.flatMap(t => 
+         { val tuneId = TuneId(id)
+           TuneRef(tuneId.name, tuneId.rhythm, id).success
+         })
+    }
   
 }
 
@@ -253,7 +263,7 @@ class AbcSubmission (genre: String,
     private def checkKeySignature() : Validation[String, AbcSubmission] = tuneKey match {
       case None => "No key Signature present in abc".fail
       case Some(k) => {
-        if (4 != k.length)  {
+        if (4 > k.length)  {
           ("Unrecognized key signature: " + k).fail
         }
         else {

@@ -26,7 +26,7 @@ fi
 dbname=$2
 collection=$3
 
-java -Dconfig.file=conf/musicrest.conf -classpath target/scala-2.10/musicrest-2.10.2.jar org.bayswater.musicrest.tools.BulkImport $abcdir $dbname $collection
+java -Dconfig.file=conf/musicrest.conf -classpath target/scala-2.10/musicrest-2.10-1.1.3.jar org.bayswater.musicrest.tools.BulkImport $abcdir $dbname $collection
 
 echo "abc return: " $retcode
 

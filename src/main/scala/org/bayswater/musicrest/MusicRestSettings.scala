@@ -17,6 +17,7 @@
 package org.bayswater.musicrest
 
 import com.typesafe.config.{Config, ConfigFactory}
+import scala.collection.JavaConverters._
 
 object MusicRestSettings {
   
@@ -61,8 +62,9 @@ object MusicRestSettings {
   val mailLogin        = c getString       "mail.login"
   val mailPassword     = c getString       "mail.password"
   val mailFromAddress  = c getString       "mail.fromAddress"  
-  
-  val corsOrigin       = c getString       "security.corsOrigin"
+ 
+  val corsOriginsJava               = c getStringList "security.corsOrigins"
+  val corsOrigins:List[String]      = corsOriginsJava.asScala.toList
 
   def resolveRelativeDir(dir: String) = 
     if (dir.startsWith("/"))

@@ -17,8 +17,7 @@
 package org.bayswater.musicrest.model
 
 import spray.util.LoggingContext  
-import org.bayswater.musicrest.abc.AbcMongo
-import org.bayswater.musicrest.abc.Abc
+import org.bayswater.musicrest.abc.{Abc, AbcMongo, TuneRef}
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.MongoDB
 import scalaz.Validation
@@ -119,6 +118,9 @@ class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: Stri
  
   def getNotes(genre: String, id: String): Option[String] = 
     getAttribute(genre, id, "abc")
+    
+  def getAbcHeaders(genre: String, id: String): Option[String] = 
+    getAttribute(genre, id, "abcHeaders")
   
   def getSubmitter(genre: String, id: String): Option[String] = 
     getAttribute(genre, id, "submitter")    
@@ -175,19 +177,31 @@ class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: Stri
   
   /** add a new title to a tune */ 
   def addAlternativeTitle(genre: String, id: String, title: String) : Validation[String, String] = {
-    val tuneOption = TuneModel().getTune(genre, id) 
-    if (!tuneOption.isDefined) {
+    val tuneOption = TuneModel().getTune(genre, id)
+    if (title.contains('\\')) {
+          (s"Please use Unicode for all titles and don't use backslashes - you have submitted $title").fail
+    }
+    else if (!tuneOption.isDefined) {
       ("tune " + id + " does not exist").fail
     }
-    else {
-      val abcMongo = tuneOption.get
-      val abc = Abc(abcMongo)
-      val newAbc = abc.addAlternativeTitle(title)
-      newAbc.flatMap( a => TuneModel().insert(genre, a) )
+    else {  
+      // update the T headers within the ABC
+      val abcHeaders:String = TuneModel().getAbcHeaders(genre, id).getOrElse("")
+      val newAbcHeaders = abcHeaders + ("T: " + title + "\n")
+      // update the database
+      val mongoCollection = mongoConnection(dbname)(genre)
+      val addTitleToSet = $addToSet("T" -> title) 
+      val replaceHeaders = $set("abcHeaders" -> newAbcHeaders) 
+      val q = MongoDBObject(TuneModel.tuneKey -> id)
+      // how does Casbah allow us to do these two operations in a single query?
+      mongoCollection.update(q, addTitleToSet) 
+      mongoCollection.update(q, replaceHeaders) 
+      // return the valid tune ref
+      (s"Tune title ${title} added").success
       }
-  }
-    
+  }  
   
+
   def insertUser(user: User): Validation[String, UnregisteredUser] = insertUser(user, false) 
   
   /** get the user details */
@@ -370,6 +384,16 @@ class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: Stri
       case None => "No such user".fail
     }
   }    
+  
+   /** add a unique index on the genre */
+  def createIndex(genre: String) = {
+     // don't make one if we're using the default _id key - Mongo does this automatically
+     if ("_id" != TuneModel.tuneKey) {
+       val mongoCollection = mongoConnection(dbname)(genre)
+       mongoCollection.ensureIndex( DBObject(TuneModel.tuneKey -> 1), DBObject("unique" -> true) )
+       log.info(s"unique index ${TuneModel.tuneKey} created on ${genre}")
+     }
+  }
   
   /* implementation (not exposed)*/
   

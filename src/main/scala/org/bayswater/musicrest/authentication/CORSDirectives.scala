@@ -13,16 +13,16 @@ trait CORSDirectives  { this: HttpService =>
       HttpHeaders.`Access-Control-Allow-Credentials`(true)
     )
 
-  def corsFilter(origin: String)(route: Route) =
-    if (origin == "*")
+  def corsFilter(origins: List[String])(route: Route) =
+    if (origins.contains("*"))
       respondWithCORSHeaders("*")(route)
     else
       optionalHeaderValueByName("Origin") {
         case None => 
           route        
         case Some(clientOrigin) => {
-          if (origin == clientOrigin)
-            respondWithCORSHeaders(origin)(route)
+          if (origins.contains(clientOrigin))
+            respondWithCORSHeaders(clientOrigin)(route)
           else {
             // Maybe, a Rejection will fit better
             complete(StatusCodes.Forbidden, "Invalid origin")
