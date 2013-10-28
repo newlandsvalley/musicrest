@@ -138,12 +138,12 @@ There is no web front end included within this project.  However [tradtunedb](ht
 
 #### _Source Code_
 
-Code is written in scala and built with sbt.  Currently the master branch is built using Spray Nightlies because we require CORS support:
+Code is written in scala and built with sbt.  
     
-    "io.spray"            %   "spray-can"          % "1.1-20130927",
-    "io.spray"            %   "spray-routing"      % "1.1-20130927",
-    "io.spray"            %   "spray-caching"      % "1.1-20130927",
-    "io.spray"            %   "spray-testkit"      % "1.1-20130927",
+    "io.spray"            %   "spray-can"          % "1.1-RC1",
+    "io.spray"            %   "spray-routing"      % "1.1-RC1",
+    "io.spray"            %   "spray-caching"      % "1.1-RC1",
+    "io.spray"            %   "spray-testkit"      % "1.1-RC1",
     "com.typesafe.akka"   %%  "akka-actor"         % "2.1.4",
     "com.typesafe.akka"   %%  "akka-testkit"       % "2.1.4",
     "org.scalaz"          %   "scalaz-core_2.10"   % "7.0.0",
