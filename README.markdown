@@ -126,7 +126,7 @@ _corsOrigins_ allows any of the nominated servers to make available scripts that
         fromAddress = "youraccount@gmail.com"
       }
       security {
-        corsOrigins = ["http://localhost:9000", "www.otherhost.org"]
+        corsOrigins = ["http://localhost:9000", "http://www.otherhost.org"]
       }
     }
 

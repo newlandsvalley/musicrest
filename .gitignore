@@ -1,3 +1,9 @@
+# Ignore all dotfiles...
+.*
+# except for .gitignore
+!.gitignore
+
+
 /.idea/
 /project/boot/
 /project/plugins/project
