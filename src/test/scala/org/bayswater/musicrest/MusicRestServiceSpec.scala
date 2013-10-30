@@ -44,9 +44,17 @@ class MusicRestServiceSpec extends RoutingSpec with MusicRestService {
 
     "return a greeting for GET requests to the root path" in {
       Get("/musicrest") ~> musicRestRoute ~> check {
-        entityAs[String] must contain("MusicRest version")
+        responseAs[String] must contain("MusicRest version")
+      }
+    }    
+    
+    /* since Spray 1.1 RC2 */
+    "return a greeting for GET requests to the root path with terminating slash" in {
+      Get("/musicrest/") ~> musicRestRoute ~> check {
+        responseAs[String] must contain("MusicRest version")
       }
     }
+
 
     "leave GET requests to other paths unhandled" in {
       Get("/kermit") ~> musicRestRoute ~> check {
@@ -57,7 +65,7 @@ class MusicRestServiceSpec extends RoutingSpec with MusicRestService {
     "return a MethodNotAllowed error for PUT requests to the root path" in {
       Put("/musicrest") ~> sealRoute(musicRestRoute) ~> check {
         status === MethodNotAllowed
-        entityAs[String] === "HTTP method not allowed, supported methods: GET"
+        responseAs[String] === "HTTP method not allowed, supported methods: GET"
       }
     }    
     
@@ -65,7 +73,7 @@ class MusicRestServiceSpec extends RoutingSpec with MusicRestService {
        Post("/musicrest/genre/irish/tune", HttpEntity(`application/x-www-form-urlencoded`, TestData.frahers)) ~>  Authorization(BasicHttpCredentials("administrator", "adm1n1str80r")) ~> musicRestRoute ~> check 
          { 
          mediaType === MediaTypes.`text/plain`
-         entityAs[String] must contain("fraher's jig-jig") 
+         responseAs[String] must contain("fraher's jig-jig") 
          }
     }    
     
@@ -73,7 +81,7 @@ class MusicRestServiceSpec extends RoutingSpec with MusicRestService {
        Post("/musicrest/genre/scandi/tune", HttpEntity(`application/x-www-form-urlencoded`, TestData.hälleforsnäs)) ~>  Authorization(BasicHttpCredentials("administrator", "adm1n1str80r")) ~> musicRestRoute ~> check 
          { 
          contentType === ContentType(MediaTypes.`text/plain`, HttpCharsets.`UTF-8`)
-         entityAs[String] must contain("hälleforsnäs") 
+         responseAs[String] must contain("hälleforsnäs") 
          }
     }
     
@@ -81,7 +89,7 @@ class MusicRestServiceSpec extends RoutingSpec with MusicRestService {
        Post("/musicrest/genre/irish/transcode", HttpEntity(`application/x-www-form-urlencoded`, TestData.figForaKiss))  ~>  Authorization(BasicHttpCredentials("administrator", "adm1n1str80r")) ~> musicRestRoute ~> check 
          { 
          mediaType === MediaTypes.`text/plain`
-         entityAs[String] must contain("a fig for a kiss-slip jig") 
+         responseAs[String] must contain("a fig for a kiss-slip jig") 
          }
     }       
    
@@ -89,18 +97,18 @@ class MusicRestServiceSpec extends RoutingSpec with MusicRestService {
      /* Tunes requiring no content negotiation - the media type is supplied in the url*/
     "return text/html content when requested in the url for tunes of this type" in {
       Get("/musicrest/genre/irish/tune/noon+lasses-reel/html") ~> musicRestRoute ~> check {
-        entityAs[String] must contain("T: Noon Lasses")
-        entityAs[String] must contain("M: 4/4")
+        responseAs[String] must contain("T: Noon Lasses")
+        responseAs[String] must contain("M: 4/4")
         mediaType === MediaTypes.`text/html`
       }
     }   
     
     "return text/vnd.abc content when requested in the url for tunes of this type" in {
       Get("/musicrest/genre/irish/tune/noon+lasses-reel/abc") ~> musicRestRoute ~> check {
-        entityAs[String] must contain("T: Noon Lasses")
-        entityAs[String] must contain("M: 4/4")
+        responseAs[String] must contain("T: Noon Lasses")
+        responseAs[String] must contain("M: 4/4")
         // we always add an S: header for this MIME type into the ABC even if one is absent when submitted
-        entityAs[String] must contain("S: ")
+        responseAs[String] must contain("S: ")
         mediaType === AbcType
       }
     }   
@@ -108,7 +116,7 @@ class MusicRestServiceSpec extends RoutingSpec with MusicRestService {
     "return audio/wav content when requested in the url for tunes of this type" in {
       Get("/musicrest/genre/irish/tune/noon+lasses-reel/wav") ~> musicRestRoute ~> check {
         if (mediaType == MediaTypes.`text/plain`) {
-          println(s"wav error ${entityAs[String]}")
+          println(s"wav error ${responseAs[String]}")
         }
         mediaType === MediaTypes.`audio/wav`
       }
@@ -142,34 +150,34 @@ class MusicRestServiceSpec extends RoutingSpec with MusicRestService {
     "return a sensible error when requested for images of tunes that don't exist" in {
       Get("/musicrest/genre/irish/tune/unknown-tune/png") ~> musicRestRoute ~> check {
         status === BadRequest
-        entityAs[String] === "unknown-tune not found in genre irish for image/png"
+        responseAs[String] === "unknown-tune not found in genre irish for image/png"
       }
     }   
     
     "return true when requested for tunes that do exist" in {
       Get("/musicrest/genre/irish/tune/noon+lasses-reel/exists") ~> musicRestRoute ~> check {
-        entityAs[String] must contain("true")
+        responseAs[String] must contain("true")
         mediaType === MediaTypes.`text/plain`
       }
     }    
         
     "return false when requested for tunes that don't exist" in {
       Get("/musicrest/genre/irish/tune/unknown-tune/exists") ~> musicRestRoute ~> check {
-        entityAs[String] must contain("false")
+        responseAs[String] must contain("false")
         mediaType === MediaTypes.`text/plain`
       }
     }    
     
     "return true when requested for genres that do exist" in {
       Get("/musicrest/genre/irish/exists") ~> musicRestRoute ~> check {
-        entityAs[String] must contain("true")
+        responseAs[String] must contain("true")
         mediaType === MediaTypes.`text/plain`
       }
     }        
     
     "return false when requested for genres that don't exist" in {
       Get("/musicrest/genre/unknown-genre/exists") ~> musicRestRoute ~> check {
-        entityAs[String] must contain("false")
+        responseAs[String] must contain("false")
         mediaType === MediaTypes.`text/plain`
       }
     }    
@@ -192,7 +200,7 @@ class MusicRestServiceSpec extends RoutingSpec with MusicRestService {
    "allow a new user to be added" in {
        Post("/musicrest/user", TestData.newUser1FormData)  ~> musicRestRoute ~> check 
          { 
-         entityAs[String] must contain("User: mike-mcgoldrick OK") 
+         responseAs[String] must contain("User: mike-mcgoldrick OK") 
          // mediaType === MediaTypes.`text/plain`
          mediaType === MediaTypes.`text/html`
          }
@@ -202,7 +210,7 @@ class MusicRestServiceSpec extends RoutingSpec with MusicRestService {
    "allow a pre-registered user to be added by the administrator" in {
        Post("/musicrest/user", TestData.newUser2FormData)  ~> Authorization(BasicHttpCredentials("administrator", "adm1n1str80r")) ~> musicRestRoute ~> check 
          { 
-         entityAs[String] must contain("User: kevin-crawford OK") 
+         responseAs[String] must contain("User: kevin-crawford OK") 
          // mediaType === MediaTypes.`text/plain`
          mediaType === MediaTypes.`text/html`
          }
@@ -211,7 +219,7 @@ class MusicRestServiceSpec extends RoutingSpec with MusicRestService {
    "allow a user to reset his password" in {
        Post("/musicrest/user/password/reset", TestData.newPasswordFormData)  ~>  Authorization(BasicHttpCredentials("test user", "passw0rd1")) ~> musicRestRoute ~> check 
          { 
-         entityAs[String] must contain("test user: password changed") 
+         responseAs[String] must contain("test user: password changed") 
          // mediaType === MediaTypes.`text/plain`
          mediaType === MediaTypes.`text/plain`
          }
@@ -221,7 +229,7 @@ class MusicRestServiceSpec extends RoutingSpec with MusicRestService {
        Get("/musicrest/user/validate/" + newUserUuid)  ~> musicRestRoute ~> check 
           { 
            mediaType === MediaTypes.`text/html`
-           entityAs[String] must contain("User: mathias OK") 
+           responseAs[String] must contain("User: mathias OK") 
           }
     }   
 

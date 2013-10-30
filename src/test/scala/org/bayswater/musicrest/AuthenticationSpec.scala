@@ -66,11 +66,11 @@ class AuthenticationSpec extends RoutingSpec with MusicRestService {
     }
     "allow administrators to delete tunes" in {
        Delete("/musicrest/genre/irish/tune/noon+lasses-reel") ~>  Authorization(BasicHttpCredentials("administrator", "adm1n1str80r")) ~> musicRestRoute ~> check 
-         { entityAs[String] must contain("Tune noon lasses-reel removed from irish") }
+         { responseAs[String] must contain("Tune noon lasses-reel removed from irish") }
     } 
     "allow original submitter to delete tunes" in {
        Delete("/musicrest/genre/irish/tune/speed+the+plough-reel") ~>  Authorization(BasicHttpCredentials("test user", "passw0rd1")) ~> musicRestRoute ~> check 
-         { entityAs[String] must contain("Tune speed the plough-reel removed from irish") }
+         { responseAs[String] must contain("Tune speed the plough-reel removed from irish") }
     } 
     "reject authentication for unknown credentials in user check" in {
        Get("/musicrest/user/check") ~>  Authorization(BasicHttpCredentials("foo", "bar")) ~> musicRestRoute ~> check 
@@ -78,7 +78,7 @@ class AuthenticationSpec extends RoutingSpec with MusicRestService {
     }
     "allow authentication for known credentials in user check" in {
        Get("/musicrest/user/check") ~>  Authorization(BasicHttpCredentials("test user", "passw0rd1")) ~> musicRestRoute ~> check 
-         { entityAs[String] must contain("user is valid") }
+         { responseAs[String] must contain("user is valid") }
     }
   }
   

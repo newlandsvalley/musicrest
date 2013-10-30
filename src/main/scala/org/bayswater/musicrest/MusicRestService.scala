@@ -106,11 +106,13 @@ trait MusicRestService extends HttpService with CORSDirectives {
    */
   val tuneRoute =  
     handleExceptions(myExceptionHandler) { logRequestResponse(rrlogger) {
-  // val tuneRoute =  
-    path("musicrest") {
-      get {
-          // logger.info("welcome")
-          complete (Welcome())
+    // val tuneRoute =  
+    pathPrefix("musicrest") {   
+      pathEndOrSingleSlash {     
+        get {
+            // logger.info("welcome")
+            complete (Welcome())
+        }
       }
     } ~   
     path("musicrest" / "config" ) {

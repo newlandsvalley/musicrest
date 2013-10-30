@@ -140,10 +140,10 @@ There is no web front end included within this project.  However [tradtunedb](ht
 
 Code is written in scala and built with sbt.  
     
-    "io.spray"            %   "spray-can"          % "1.1-RC1",
-    "io.spray"            %   "spray-routing"      % "1.1-RC1",
-    "io.spray"            %   "spray-caching"      % "1.1-RC1",
-    "io.spray"            %   "spray-testkit"      % "1.1-RC1",
+    "io.spray"            %   "spray-can"          % "1.1-RC2",
+    "io.spray"            %   "spray-routing"      % "1.1-RC2",
+    "io.spray"            %   "spray-caching"      % "1.1-RC2",
+    "io.spray"            %   "spray-testkit"      % "1.1-RC2",
     "com.typesafe.akka"   %%  "akka-actor"         % "2.1.4",
     "com.typesafe.akka"   %%  "akka-testkit"       % "2.1.4",
     "org.scalaz"          %   "scalaz-core_2.10"   % "7.0.0",

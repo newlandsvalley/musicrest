@@ -7,12 +7,12 @@ import spray.http.HttpHeaders._
  *  the real one to find its way into a Spray release.
  */
 trait CORSDirectives  { this: HttpService =>
-  def respondWithCORSHeaders(origin: String) =
+  private def respondWithCORSHeaders(origin: String) =
     respondWithHeaders(      
       HttpHeaders.`Access-Control-Allow-Origin`(SomeOrigins(List(origin))),
       HttpHeaders.`Access-Control-Allow-Credentials`(true)
     )
-  def respondWithCORSHeadersAllOrigins =
+  private def respondWithCORSHeadersAllOrigins =
     respondWithHeaders(      
       HttpHeaders.`Access-Control-Allow-Origin`(AllOrigins),
       HttpHeaders.`Access-Control-Allow-Credentials`(true)
@@ -20,7 +20,6 @@ trait CORSDirectives  { this: HttpService =>
 
   def corsFilter(origins: List[String])(route: Route) =
     if (origins.contains("*"))
-      // respondWithCORSHeaders("*")(route)
       respondWithCORSHeadersAllOrigins(route)
     else
       optionalHeaderValueByName("Origin") {
