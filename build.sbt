@@ -4,11 +4,11 @@ assemblySettings
 
 name  := "musicrest-nightly"
 
-jarName in assembly := "musicrest-2.10-1.1.3.jar"
+jarName in assembly := "musicrest-2.10-1.1.4.jar"
 
 organization  := "org.bayswater.musicrest"
 
-version       := "1.1.3"
+version       := "1.1.4"
 
 scalaVersion  := "2.10.2"
 

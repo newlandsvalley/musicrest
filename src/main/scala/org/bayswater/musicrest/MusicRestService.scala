@@ -140,8 +140,10 @@ trait MusicRestService extends HttpService with CORSDirectives {
         // return true if the genre exists (is supported)
         get {   
           respondWithMediaType(`text/plain`) {
-            val exists = SupportedGenres.isGenre(genre)
-            complete(exists.toString)
+            complete{
+              val exists = SupportedGenres.isGenre(genre)
+              exists.toString
+              }
           } 
         } 
       } ~     
@@ -149,17 +151,18 @@ trait MusicRestService extends HttpService with CORSDirectives {
       path(Segment / "tune"  ) { genre =>
         post {     
           authenticate(BasicAuth(UserAuthenticator, "musicrest")) { user =>     
-            entity(as[AbcPost]) { post =>  {
-              val abcSubmission = AbcSubmission(post.notes.lines, genre, user.username)
-              val validAbc:Validation[String, Abc] = abcSubmission.validate
-              val response:Validation[String, TuneRef] = for {
-                 g <- GenreList.validate(genre)
-                 abc <- validAbc 
-                 // we will try to transcode immediately to png which might cause further errors
-                 t <- abc.to(`image/png`)
-                 success <- abc.insertIfNew(genre)
-              } yield {success}
-              _.complete(response)
+            entity(as[AbcPost]) { post =>  
+              complete {
+                val abcSubmission = AbcSubmission(post.notes.lines, genre, user.username)
+                val validAbc:Validation[String, Abc] = abcSubmission.validate
+                val response:Validation[String, TuneRef] = for {
+                  g <- GenreList.validate(genre)
+                  abc <- validAbc 
+                  // we will try to transcode immediately to png which might cause further errors
+                  t <- abc.to(`image/png`)
+                  success <- abc.insertIfNew(genre)
+                } yield {success}
+                response               
               }
             }
           }
@@ -192,13 +195,13 @@ trait MusicRestService extends HttpService with CORSDirectives {
               case (Some(s), u) => s == u
               case _ => false
             }
-            if (authorized) {
+            if (authorized) complete {
               // delete from the file systen cache
               val dir = new File(MusicRestSettings.transcodeCacheDir)
               clearTuneFromCache(dir, tune)
               // delete from the database
               val result = TuneModel().delete(genre, tune)
-              _.complete(result)
+              result
             }
             else {
               // we'll use the horrible exception mechanism for the time being to get
@@ -219,8 +222,10 @@ trait MusicRestService extends HttpService with CORSDirectives {
         // return true if the tune exists in the database       
         get {   
           respondWithMediaType(`text/plain`) {
-            val tuneNotes = java.net.URLDecoder.decode(tuneEncoded, "UTF-8")
-            complete(Tune(genre, tuneNotes).exists )
+            complete {
+              val tuneNotes = java.net.URLDecoder.decode(tuneEncoded, "UTF-8")
+              Tune(genre, tuneNotes).exists 
+            }
           } 
         } 
       } ~     
@@ -228,17 +233,20 @@ trait MusicRestService extends HttpService with CORSDirectives {
         // get a tune (in abc defined by abc.vnd (plain text) format)         
         get {   
           respondWithMediaType(Tune.AbcType) {
-            val tuneNotes = java.net.URLDecoder.decode(tuneEncoded, "UTF-8")
-            complete(Tune(genre, tuneNotes).asAbc )
+            complete{
+              val tuneNotes = java.net.URLDecoder.decode(tuneEncoded, "UTF-8")
+              Tune(genre, tuneNotes).asAbc             
+            }
           } 
         } ~
         post {
           // add an alternative tune title 
           authenticate(BasicAuth(UserAuthenticator, "musicrest")) { user =>     
             entity(as[AlternativeTitlePost]) { post =>  
-              val tune = java.net.URLDecoder.decode(tuneEncoded, "UTF-8")
-              val update = Abc.addAlternativeTitle(genre, tune, post.title) 
-              complete(update)
+              val tune = java.net.URLDecoder.decode(tuneEncoded, "UTF-8")              
+              complete {
+                Abc.addAlternativeTitle(genre, tune, post.title) 
+              }
             }
           }
         }
@@ -272,8 +280,10 @@ trait MusicRestService extends HttpService with CORSDirectives {
           respondWithMediaType(`image/png`) {
             val tuneName = java.net.URLDecoder.decode(tuneEncoded, "UTF-8")
             // System.out.println("got request for temporary tune image for " + tuneName)
-            val futureImage: Future[Validation[String, BinaryImage]] =  Tune(genre, tuneName).asFutureTemporaryImage
-            _.complete(futureImage)
+            _.complete {
+              val futureImage: Future[Validation[String, BinaryImage]] =  Tune(genre, tuneName).asFutureTemporaryImage
+              futureImage
+            }
           }
         } 
       }  ~
@@ -293,9 +303,11 @@ trait MusicRestService extends HttpService with CORSDirectives {
               corsFilter(MusicRestSettings.corsOrigins) {
               // respondWithCORSHeaders("*") {
                 val tune = java.net.URLDecoder.decode(tuneEncoded, "UTF-8") 
-                 // val futureBin:Future[Validation[String, BinaryImage]] = Tune(genre, tune).asFutureBinary(fileType) 
-                 val futureBin = Tune(genre, tune).asFutureBinary(contentTypeOpt.get)
-                 _.complete(futureBin)
+                 _.complete {
+                   // val futureBin:Future[Validation[String, BinaryImage]] = Tune(genre, tune).asFutureBinary(fileType) 
+                   val futureBin = Tune(genre, tune).asFutureBinary(contentTypeOpt.get)
+                   futureBin
+                 }
               }
             }
           }
@@ -315,10 +327,19 @@ trait MusicRestService extends HttpService with CORSDirectives {
             val page = pageStr.toInt
             val size = sizeStr.toInt
             // System.out.println("request for page: " + page)
+            /*
             val tuneList = TuneList(genre, searchParams, sort, page, size)
             val totalPages = (tuneList.totalResults + size - 1) / size 
             val headers = List(paginationHeader(page, totalPages))
             ctx.complete(200, headers, tuneList) 
+            * 
+            */
+            ctx.complete {              
+              val tuneList = TuneList(genre, searchParams, sort, page, size)
+              val totalPages = (tuneList.totalResults + size - 1) / size 
+              val headers = List(paginationHeader(page, totalPages))
+              (200, headers, tuneList) 
+              }
             }  
           }             
       } ~ 
@@ -327,16 +348,18 @@ trait MusicRestService extends HttpService with CORSDirectives {
         authenticate(BasicAuth(UserAuthenticator, "musicrest")) { user =>      
           post { 
             entity(as[AbcPost]) { post =>     
-              val abcSubmission = AbcSubmission(post.notes.lines, genre, user.username)
-              val validAbc:Validation[String, Abc] = abcSubmission.validate
-              val response:Validation[String, TuneRef] = for {
-                 g <- GenreList.validate(genre)
-                 abc <- validAbc 
-                 // we will try to transcode immediately to png which might cause further errors
-                 t <- abc.createTemporaryImageFile
-                 success <- abc.validTuneRef(genre)
-              } yield {success}
-              complete(response)
+              complete {
+                val abcSubmission = AbcSubmission(post.notes.lines, genre, user.username)
+                val validAbc:Validation[String, Abc] = abcSubmission.validate
+                val response:Validation[String, TuneRef] = for {
+                   g <- GenreList.validate(genre)
+                   abc <- validAbc 
+                   // we will try to transcode immediately to png which might cause further errors
+                   t <- abc.createTemporaryImageFile
+                   success <- abc.validTuneRef(genre)
+                } yield {success}
+                response
+              }
             }
           }
         }
@@ -349,7 +372,7 @@ trait MusicRestService extends HttpService with CORSDirectives {
   val userRoute =
     pathPrefix("musicrest") {
       path("user") { 
-        post { 
+       post { 
           /* create new user.  We will allow any user to submit his details, but if we detect that the administrator
            * is the currently logged-in user, we assume he is creating a user of behalf of someone else
            * and so we set up a pre-registered user
@@ -362,16 +385,18 @@ trait MusicRestService extends HttpService with CORSDirectives {
                  case _ => false
                }
                println(s"optional user is $userOpt is this the administrator $doRegister")
-               val vu  = for {
-                 n <- User.checkName(URLDecoder.decode(name, "UTF-8"))
-                 e <- User.checkEmail(URLDecoder.decode(email, "UTF-8"))
-                 p <- User.checkPassword(URLDecoder.decode(password, "UTF-8"), URLDecoder.decode(password2, "UTF-8"))
-                 _ <- User.checkUnique(URLDecoder.decode(name, "UTF-8"))
-                 u <- User(n,e,p).insert(doRegister)
-                 // we'll send a different email depending on whether or not the user is pre-registered
-                 e <- Email.sendRegistrationMessage(u, doRegister)
-               } yield u    
-               complete(vu)
+               complete {
+                 val vu  = for {
+                   n <- User.checkName(URLDecoder.decode(name, "UTF-8"))
+                   e <- User.checkEmail(URLDecoder.decode(email, "UTF-8"))
+                   p <- User.checkPassword(URLDecoder.decode(password, "UTF-8"), URLDecoder.decode(password2, "UTF-8"))
+                   _ <- User.checkUnique(URLDecoder.decode(name, "UTF-8"))
+                   u <- User(n,e,p).insert(doRegister)
+                   // we'll send a different email depending on whether or not the user is pre-registered
+                   e <- Email.sendRegistrationMessage(u, doRegister)
+                 } yield u    
+                 vu
+                 }
                } 
              }
             }
@@ -393,10 +418,11 @@ trait MusicRestService extends HttpService with CORSDirectives {
       // validate a user (i.e. after he's responded to an email)
       path ("user" / "validate" / Segment ) { uuid => 
         get {
-          val result = User.validate(uuid)
           ctx => {
             // debugRequestHeaders(ctx)
-            ctx.complete(result)    
+            ctx.complete {
+              User.validate(uuid)
+            }    
           }
         }            
       }~
@@ -404,10 +430,10 @@ trait MusicRestService extends HttpService with CORSDirectives {
       path("user" / "password" / "reset") { 
         authenticate(BasicAuth(UserAuthenticator, "musicrest")) { user =>      
           post {
-           formFields('password) { password =>        
-             // val vun:Validation[String, String] 
-             val vun = TuneModel().alterPassword(user.username, password) 
-             complete(vun)
+            formFields('password) { password =>  
+              complete {
+                TuneModel().alterPassword(user.username, password)
+              }
             }
           }
         }
@@ -416,11 +442,13 @@ trait MusicRestService extends HttpService with CORSDirectives {
       path("user" / "password" / "resend") { 
         post { 
           formFields('name) { (name) =>     
-             val vun:Validation[String, String] = for {
-               ur <- User.get(name)
-               e <- Email.sendPasswordMessage(ur)
-             } yield ur.name     
-             complete(vun)
+            complete {
+              val vun:Validation[String, String] = for {
+                ur <- User.get(name)
+                e <- Email.sendPasswordMessage(ur)
+              } yield ur.name     
+              vun
+            }
            }
          }
       } ~     
@@ -438,8 +466,9 @@ trait MusicRestService extends HttpService with CORSDirectives {
         delete {     
           authenticate(BasicAuth(AdminAuthenticator, "musicrest")) { user =>   
             val name = java.net.URLDecoder.decode(uname, "UTF-8")
-            val result = TuneModel().deleteUser(name)
-            complete(result)
+            complete {
+              TuneModel().deleteUser(name)
+            }
           }
         } 
       } 
