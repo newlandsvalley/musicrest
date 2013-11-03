@@ -24,7 +24,7 @@ import scalaz.Validation
 import scalaz.syntax.validation._
 import scala.collection.JavaConversions._
 
-class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: String) extends TuneModel {  
+class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: String) extends TuneModel with MongoTransaction {  
   
   val log = implicitly[LoggingContext]
   val mongoDB = MongoDB(mongoConnection, dbname) 
@@ -36,7 +36,7 @@ class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: Stri
   }
 
   def testConnection(): Boolean = try {     
-    userCount
+    count("irish", Map.empty[String, String])
     true   
   }
   catch {
@@ -44,7 +44,7 @@ class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: Stri
     false
   }
  
-  def insert(genre: String, abc:Abc): Validation[String, String] = withMongoPseudoTransction {
+  def insert(genre: String, abc:Abc): Validation[String, String] = withMongoPseudoTransction (mongoDB) {
     val mongoCollection = mongoConnection(dbname)(genre)
     val builder = MongoDBObject.newBuilder[String, String]
     builder += "T" -> abc.toAbcMongo.mongoTitles
@@ -62,24 +62,19 @@ class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: Stri
     opt.isDefined
   }   
   
-  def delete(genre: String, id: String) : Validation[String, String] = withMongoPseudoTransction {
+  def delete(genre: String, id: String) : Validation[String, String] = withMongoPseudoTransction (mongoDB) {
     val mongoCollection = mongoConnection(dbname)(genre)
     val result = mongoCollection.remove(MongoDBObject(TuneModel.tuneKey -> id))
     "Tune " + id + " removed from " + genre    
   }   
 
-  def delete(genre: String) : Validation[String, String] = withMongoPseudoTransction {
+  def delete(genre: String) : Validation[String, String] = withMongoPseudoTransction (mongoDB) {
     val mongoCollection = mongoConnection(dbname)(genre)
     val result = mongoCollection.remove(MongoDBObject.empty)
     s"all tunes removed from $genre"
   }   
   
-  def existsUser(id: String) : Boolean = {
-    val mongoCollection = mongoConnection(dbname)("users")
-    val opt = mongoCollection.findOneByID(id)
-    opt.isDefined    
-  }   
-  
+   
  def getSupportedGenres() : List[String] = {
     val mongoCollection = mongoConnection(dbname)("genre")
     val q  = MongoDBObject.empty
@@ -202,88 +197,7 @@ class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: Stri
   }  
   
 
-  def insertUser(user: User): Validation[String, UnregisteredUser] = insertUser(user, false) 
-  
-  /** get the user details */
-  def getUser(name: String) : Validation[String, UserRef] = {
-    println("looking for user " + name)    
-    val opt = getUserByName(name)
-    opt match {
-      case Some(userDBObject) => {
-                               val email = userDBObject.get("email").asInstanceOf[String]
-                               val password = userDBObject.get("password").asInstanceOf[String]
-                               UserRef(name, email, password).success
-                               }
-      case None => "No such user".fail
-    } 
-  }
-  
-  /** insert a user who's automatically registered */
-  def insertPreRegisteredUser(user: User): Validation[String, UnregisteredUser] = insertUser(user, true) 
-  
-  def insertUser(user: User, isRegistered: Boolean): Validation[String, UnregisteredUser] = {
-    if (existsUser(user.name)) {
-      ("User: " + user.name + " already exists").fail
-    }
-    else withMongoPseudoTransction {
-      val validity = if (isRegistered) "Y" else "N"
-      val mongoCollection = mongoConnection(dbname)("users")
-      val builder = MongoDBObject.newBuilder[String, String]
-      builder += "_id" -> user.name
-      builder += "email" -> user.email
-      builder += "password" -> user.password
-      builder += "uuid" -> user.uuid
-      builder += "valid" -> validity
-      mongoCollection += builder.result
-      UnregisteredUser(user.name, user.email, user.password, user.uuid)
-    }
-  }  
  
-  
-  def validateUser(uuid: String): Validation[String, UnregisteredUser] = {
-    val opt = getUserByUuid(uuid)
-    opt match {
-      case Some(userDBObject) => {
-                               validateTheUser(userDBObject)
-                               val uid = userDBObject.get("_id").asInstanceOf[String]
-                               val email = userDBObject.get("email").asInstanceOf[String]
-                               val password = userDBObject.get("password").asInstanceOf[String]
-                               UnregisteredUser(uid, email, password, uuid).success
-                               }
-      case None => "No such user".fail
-    }
-  } 
- 
-  def isValidUser(name: String, password:String): Boolean = {
-    // println(s"looking for user: $name and password $password in $dbname")
-    val mongoCollection = mongoConnection(dbname)("users")
-    val q = MongoDBObject.newBuilder[String, String]
-    q += "_id" -> name
-    q += "password" -> password
-    q += "valid" -> "Y"  
-    val opt = mongoCollection.findOne(q.result)
-    // println(s"result: $opt")
-    opt.isDefined
-  }
-   
-  /** get a list of users */
-  def getUsers(page: Int, size: Int): Iterator[UserRef] = {    
-    val mongoCollection = mongoConnection(dbname)("users")
-    val fields = MongoDBObject("_id" -> 1, "email" -> 2, "password" -> 3)
-    val everything = MongoDBObject.empty 
-    val skip = (page -1) * size
-    val rows = for {
-      x <- mongoCollection.find(everything, fields).skip(skip).limit(size)
-    } yield x.mapValues(v => v.asInstanceOf[String])        
-    rows map { x => 
-      val name = x.getOrElse("_id", "no name")
-      val email = x.getOrElse("email", "no email")
-      val password = x.getOrElse("password", "no password")
-      UserRef(name, email, password)
-    }     
-  }    
-
-  
    
   /** search the tune store
    * 
@@ -354,36 +268,7 @@ class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: Stri
   }
   
   
-  def userCount(): Long =  {
-    val mongoCollection = mongoConnection(dbname)("users")
-    val everything = MongoDBObject.empty
-    mongoCollection.count(everything)
-  }
-
-  def deleteUser(id: String) : Validation[String, String] = withMongoPseudoTransction {
-    val mongoCollection = mongoConnection(dbname)("users")
-    val result = mongoCollection.remove(MongoDBObject("_id" -> id))
-    "User " + id + " removed"   
-  }   
   
-  def deleteUsers : Validation[String, String] = withMongoPseudoTransction {
-    val mongoCollection = mongoConnection(dbname)("users")
-    val result = mongoCollection.remove(MongoDBObject.empty)
-    "All users removed"   
-  }    
-  
-  def alterPassword(name: String, password: String) : Validation[String, String] = {
-    val mongoCollection = mongoConnection(dbname)("users")
-    val opt = getUserByName(name)
-    opt match {
-      case Some(userDBObject) => {
-                               val set = $set("password" -> password)
-                               mongoCollection.update(userDBObject, set)
-                               (name + ": password changed").success
-                               }
-      case None => "No such user".fail
-    }
-  }    
   
    /** add a unique index on the genre */
   def createIndex(genre: String) = {
@@ -397,24 +282,7 @@ class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: Stri
   
   /* implementation (not exposed)*/
   
-  private def getUserByUuid(uuid: String) : Option[com.mongodb.DBObject] = {
-    val mongoCollection = mongoConnection(dbname)("users")
-    val q  = MongoDBObject.newBuilder
-    q += "uuid" -> uuid    
-    mongoCollection.findOne(q.result)
-  }   
   
-  private def getUserByName(name: String) : Option[com.mongodb.DBObject] = {
-    val mongoCollection = mongoConnection(dbname)("users")
-    val q  = MongoDBObject.newBuilder
-    q += "_id" -> name   
-    mongoCollection.findOne(q.result)
-  }   
-  
-  private def validateTheUser(user: com.mongodb.DBObject) { 
-    val mongoCollection = mongoConnection(dbname)("users")   
-    mongoCollection.update(user, $set("valid" -> "Y"))
-  }  
   
   /** Build a case-insensitive regex pattern from the match string.
    * e.g. Reel becomes ^[Rr][Ee][Ee][Ll]
@@ -457,21 +325,6 @@ class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: Stri
   
   private def allowedSearchParam(p: String): Boolean = List(TuneModel.tuneKey, "T", "O", "M", "Q", "Z", "K", "R", "abc", "submitter").contains(p)
   
-  /** Apparently, Mongo doesn't do transactions - this is the nearest we get - it ties the sequence of statements
-   * to one particular Mongo connection and (we hope) raises an exception against that connection if things go wrong.
-   */
-  private def withMongoPseudoTransction [A] (body:  =>  A) : Validation[String, A] = 
-    try {
-      mongoDB.requestStart
-      val b = body
-      mongoDB.getLastError.throwOnError
-      b.success
-    }
-    catch {
-       case e: Exception  => e.getMessage().fail      
-    }
-    finally {
-      mongoDB.requestDone      
-    }
+
 }
 

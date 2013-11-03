@@ -22,7 +22,7 @@ import MediaTypes._
 import spray.httpx.marshalling._
 import org.bayswater.musicrest.Util
 
-import org.bayswater.musicrest.model.{TuneModel, UserRef}
+import org.bayswater.musicrest.model.{UserModel, UserRef}
 
 class UserList(i: Iterator[UserRef], page: Int, size: Int) {
   
@@ -65,7 +65,7 @@ class UserList(i: Iterator[UserRef], page: Int, size: Int) {
         }
     }     
   
-  lazy val totalResults: Long = TuneModel().userCount()   
+  lazy val totalResults: Long = UserModel().userCount()   
   
    /** format a returned user from the db list as an html table row item */
   private def buildHtmlTr(u: UserRef): String = 
@@ -77,7 +77,7 @@ class UserList(i: Iterator[UserRef], page: Int, size: Int) {
 }
 
 object UserList {
-  def apply(page: Int, size: Int): UserList = new UserList(TuneModel().getUsers(page, size), page, size) 
+  def apply(page: Int, size: Int): UserList = new UserList(UserModel().getUsers(page, size), page, size) 
 
   implicit val UserListMarshaller = {  
      val canMarshalTo = Array (ContentType(MediaTypes.`text/xml`),

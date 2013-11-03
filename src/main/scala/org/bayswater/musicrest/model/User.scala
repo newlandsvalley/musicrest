@@ -29,7 +29,7 @@ case class User(name:String, email:String, password:String) {
   
   val uuid:String = UUID.randomUUID().toString()
   
-  def insert(doRegister: Boolean): Validation[String, UnregisteredUser] = TuneModel().insertUser(this, doRegister)    
+  def insert(doRegister: Boolean): Validation[String, UnregisteredUser] = UserModel().insertUser(this, doRegister)    
 }
 
 case class UserRef(name:String, email:String, password:String) 
@@ -50,7 +50,7 @@ object User {
   }
   
   def checkUnique(name:String): Validation[String, String] = {
-    val userRef: Validation[String, UserRef] = TuneModel().getUser(name)
+    val userRef: Validation[String, UserRef] = UserModel().getUser(name)
     userRef.fold(
         e => name.success,
         u => ("User " + name + " already exists").fail
@@ -79,9 +79,15 @@ object User {
     if (email.contains('@')) email.success else ("Invalid email address: " + email).fail
   }
   
-  def validate(uuid: String): Validation[String, UnregisteredUser] = TuneModel().validateUser(uuid)
+  def validate(uuid: String): Validation[String, UnregisteredUser] = UserModel().validateUser(uuid)
   
-  def get(uuid: String): Validation[String, UserRef] = TuneModel().getUser(uuid)
+  def get(uuid: String): Validation[String, UserRef] = UserModel().getUser(uuid)
+  
+  def deleteUser(name: String) =
+      UserModel().deleteUser(name)
+  
+  def alterPassword(name: String, password: String) =
+     UserModel().alterPassword(name, password)
   
 }
 

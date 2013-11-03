@@ -21,7 +21,7 @@ import scala.io.Source
 import scalaz.Validation
 import spray.http.FormData
 import org.bayswater.musicrest.abc.{Abc, AbcSubmission}
-import org.bayswater.musicrest.model.{TuneModel,User, UnregisteredUser}
+import org.bayswater.musicrest.model.{TuneModel, UserModel, User, UnregisteredUser}
 import org.bayswater.musicrest.tools.GenreInsert
 
 object TestData {
@@ -125,21 +125,21 @@ g2>f2 e2d2 e2c2 | c2Bc d2c2 B2A2 | E3A A2B2 c2B2  | G2A2 A8 :|"""
    println("basicUsers")
    val dbName = "tunedbtest"
    val collection = "user"
-   val tuneModel = TuneModel()
-   tuneModel.deleteUsers  
+   val userModel = UserModel()
+   userModel.deleteUsers  
    val user1 = User("test user", "test.user@gmail.com", "passw0rd1")
-   tuneModel.insertPreRegisteredUser(user1) 
+   userModel.insertPreRegisteredUser(user1) 
    val user2 = User("untrustworthy user", "untrustworthy.usern@gmail.com", "password2")
-   tuneModel.insertPreRegisteredUser(user2)       
+   userModel.insertPreRegisteredUser(user2)       
    val user3 = User("administrator", "john.watson@gmx.co.uk", "adm1n1str80r")
-   tuneModel.insertPreRegisteredUser(user3)    
+   userModel.insertPreRegisteredUser(user3)    
   }  
  
  def unregisteredUser:Validation[String, UnregisteredUser] = {
    // mathias is an as yet unregistered user
-   val tuneModel = TuneModel()
+   val userModel = UserModel()
    val user3 = User("mathias", "mathias@gmail.com", "math1as")
-   tuneModel.insertUser(user3)       
+   userModel.insertUser(user3)       
  }
  
  def basicGenres = {

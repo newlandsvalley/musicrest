@@ -40,9 +40,6 @@ trait TuneModel {
   /** delete all the tunes within the genre */
   def delete(genre: String) : Validation[String, String]
   
-  /** see if the user exists */
-  def existsUser(id: String) : Boolean
-  
   /** get all the currently supported genres */
   def getSupportedGenres() : List[String]
   
@@ -70,43 +67,10 @@ trait TuneModel {
 
   /** generic search */
   def search(genre: String, params: Map[String, String], sort: String, page: Int, size: Int):  Iterator[scala.collection.Map[String, String]]  
-  
-  /** insert a (not yet validated) user into the database */
-  def insertUser(user: User): Validation[String, UnregisteredUser]
-  
-  /** insert a user and set his registration status */
-  def insertUser(user: User, isRegistered: Boolean): Validation[String, UnregisteredUser] 
-  
-  /** insert a new user who'se automatically registered */
-  def insertPreRegisteredUser(user: User): Validation[String, UnregisteredUser]  
-  
-  /** get the user details */
-  def getUser(name: String) : Validation[String, UserRef]
-  
-  /** set the user's validity */
-  def validateUser(uuid: String): Validation[String, UnregisteredUser] 
-  
-  /** get a list of users */
-  def getUsers(page: Int, size: Int): Iterator[UserRef]
-  
-  /** check the incoming credentials to see if this is a valid user */
-  def isValidUser(name: String, password:String): Boolean 
-  
+
   /** results count for a generic search */
   def count(genre: String, params: Map[String, String]) : Long  
-  
-  /** count users */
-  def userCount() : Long
-  
-  /** alter a user's password */
-  def alterPassword(name: String, password: String) : Validation[String, String]
 
-  /** delete user */
-  def deleteUser(id: String) : Validation[String, String] 
-  
-  /** delete all users */
-  def deleteUsers : Validation[String, String]  
-  
   /** add an index on the genre */
   def createIndex(genre: String)
 }

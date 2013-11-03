@@ -432,7 +432,7 @@ trait MusicRestService extends HttpService with CORSDirectives {
           post {
             formFields('password) { password =>  
               complete {
-                TuneModel().alterPassword(user.username, password)
+                User.alterPassword(user.username, password)
               }
             }
           }
@@ -467,7 +467,7 @@ trait MusicRestService extends HttpService with CORSDirectives {
           authenticate(BasicAuth(AdminAuthenticator, "musicrest")) { user =>   
             val name = java.net.URLDecoder.decode(uname, "UTF-8")
             complete {
-              TuneModel().deleteUser(name)
+              User.deleteUser(name)
             }
           }
         } 
