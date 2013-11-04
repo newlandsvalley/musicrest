@@ -377,7 +377,7 @@ trait MusicRestService extends HttpService with CORSDirectives {
            * is the currently logged-in user, we assume he is creating a user of behalf of someone else
            * and so we set up a pre-registered user
            */
-          formFields('name, 'email, 'password, 'password2) { (name, email, password, password2) =>  {  
+          formFields('name, 'email, 'password, 'password2, 'refererurl?) { (name, email, password, password2, refererUrl) =>  {  
             userName  { userOpt => {
                // val vu:Validation[String, String] 
                val doRegister = userOpt match {
@@ -392,9 +392,16 @@ trait MusicRestService extends HttpService with CORSDirectives {
                    p <- User.checkPassword(URLDecoder.decode(password, "UTF-8"), URLDecoder.decode(password2, "UTF-8"))
                    _ <- User.checkUnique(URLDecoder.decode(name, "UTF-8"))
                    u <- User(n,e,p).insert(doRegister)
-                   // we'll send a different email depending on whether or not the user is pre-registered
-                   e <- Email.sendRegistrationMessage(u, doRegister)
-                 } yield u    
+                   /* New behaviour at 1.1.4.
+                    * we'll send a different email depending on whether or not the user is pre-registered or 
+                    * whether the referring application provides us with a base URL for the registration link.
+                    * 
+                    * At the moment, None means that there is no referer url to use - we'll use the musicrest one
+                    * otherwise for Some(url) we use a confirmation email with a url to the reference we're supplied with
+                    * 
+                    */
+                   e <- Email.sendRegistrationMessage(u, doRegister, refererUrl)
+                   } yield u    
                  vu
                  }
                } 
@@ -473,9 +480,10 @@ trait MusicRestService extends HttpService with CORSDirectives {
         } 
       } 
     }
- 
-  /* overall route */
-  val musicRestRoute = tuneRoute ~ userRoute
+
+  
+    /* overall route */
+  val musicRestRoute = tuneRoute ~ userRoute 
 
   def paginationHeader(page: Int, totalPages: Long) : HttpHeaders.RawHeader = 
        HttpHeaders.RawHeader("Musicrest-Pagination", "[" + page + " of " + totalPages + "]")

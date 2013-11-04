@@ -54,8 +54,17 @@ object Email {
     Transport.send(message)  
   }
   
-  def sendRegistrationMessage(user:UnregisteredUser, isPreRegistered: Boolean): Validation[String, String] = {
-    val url=s"http://${musicRestSettings.serverHost}:${musicRestSettings.serverPort}/musicrest/user/validate/${user.uuid}"
+  /** If the administrator registers the user, she is automatically pre-registered.  Send a message to this effect.
+   *  Otherwise, send a message that includes the URL she has to click on to register.  The base of the URL may be optionally
+   *  provided by the front end (the referer) otherwise it is a musicrest url.
+   * 
+   */
+  def sendRegistrationMessage(user:UnregisteredUser, isPreRegistered: Boolean, refererUrlBase: Option[String]): Validation[String, String] = {
+    val url = refererUrlBase match {
+      case None => s"http://${musicRestSettings.serverHost}:${musicRestSettings.serverPort}/musicrest/user/validate/${user.uuid}"
+      case Some(u) => s"${u}/${user.uuid}"
+    }
+    // val url=s"http://${musicRestSettings.serverHost}:${musicRestSettings.serverPort}/musicrest/user/validate/${user.uuid}"
     // val url = "http://localhost:8080/musicrest/user/validate/" + user.uuid
     val subject = "Musicrest user validation"
     val message = if (isPreRegistered) { 
