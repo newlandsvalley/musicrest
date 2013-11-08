@@ -37,7 +37,7 @@ import org.bayswater.musicrest.abc._
 import org.bayswater.musicrest.abc.Tune._
 import org.bayswater.musicrest.abc.AbcPost._
 import org.bayswater.musicrest.abc.AlternativeTitlePost._
-import org.bayswater.musicrest.model.{TuneModel,User,UserRef}
+import org.bayswater.musicrest.model.{TuneModel, Comment, Comments,User,UserRef}
 import org.bayswater.musicrest.cache.Cache._
 import org.bayswater.musicrest.tools.Email
 import org.bayswater.musicrest.authentication.Backend._
@@ -82,7 +82,7 @@ object MusicRestService {
 
 /** MusicRestService:
  *  
- *  musicRestRoute = tuneRoute ~ userRoute
+ *  musicRestRoute = tuneRoute ~ commentsRoute ~ userRoute
  *  
  */
 trait MusicRestService extends HttpService with CORSDirectives {    
@@ -312,7 +312,10 @@ trait MusicRestService extends HttpService with CORSDirectives {
             }
           }
           else {
-           failWith(new Exception("Unrecognized file extension " + fileType))
+            // now we have comments, we can't fail here because the URLS of this structure interfere
+            // i.e the rejection should allow for an identical URL where the last Segment is 'comments'
+            // failWith(new Exception("Unrecognized file extension " + fileType))
+            reject()
           }
         } 
       } ~    
@@ -364,6 +367,74 @@ trait MusicRestService extends HttpService with CORSDirectives {
           }
         }
       }          // end of path prefix musicrest/genre          
+    } 
+  } }  // end of exception handler and log
+  
+  
+  val commentsRoute =  
+    handleExceptions(myExceptionHandler) { logRequestResponse(rrlogger) {
+  
+    pathPrefix("musicrest" / "genre" ) {
+      path(Segment / "tune" / Segment / "comments" ) { (genre, tuneEncoded) => { 
+        val tuneId = java.net.URLDecoder.decode(tuneEncoded, "UTF-8")        
+        // return all comments associated with the tune 
+        get {   
+          complete{
+            val commentsSeq = Comments.getComments(genre, tuneId)
+            Comments(commentsSeq)
+          } 
+        } ~
+        post {
+          authenticate(BasicAuth(UserAuthenticator, "musicrest")) { user =>   
+            /* Post is used both for posting the original comment and editing a comment.
+             * In each case, submitter is the original submitter of the comment
+             */
+            post {
+              formFields('user, 'timestamp, 'subject, 'text) { (submitter, timestamp, subject, text) =>  {
+              val authorized = isOwnerOrAdministrator(submitter, user.username)  
+              
+              if (authorized) {
+                complete {                
+                  val comment = Comment(submitter, timestamp, subject, text)
+                  Comments.insertComment(genre, tuneId, comment)
+                  }
+              }
+              else {
+                println(s"user ${user.username} not authorized to insert comment owned by ${submitter} for ${tuneId}")
+                reject(AuthorizationFailedRejection)
+              }
+              }  }
+            }
+          }
+        }
+      } } ~    
+      path(Segment / "tune" / Segment / "comment" / Segment / Segment ) { (genre, tuneEncoded, submitterEncoded, timestamp) =>  {
+        val tuneId = java.net.URLDecoder.decode(tuneEncoded, "UTF-8")        
+        val submitter = java.net.URLDecoder.decode(submitterEncoded, "UTF-8")        
+        /** Get an individual comment  */      
+        get {     
+          complete {            
+            Comments.getComment(genre, tuneId, submitter, timestamp)
+          }
+        } ~
+        delete {    
+          authenticate(BasicAuth(UserAuthenticator, "musicrest")) { user =>   {            
+  
+           val authorized = isOwnerOrAdministrator(submitter, user.username)
+            
+            if (authorized) {
+              respondWithMediaType(`text/plain`) {              
+                complete {
+                  Comments.deleteComment(genre, tuneId, submitter, timestamp)
+                }
+              }
+            }
+            else  {
+              reject(AuthorizationFailedRejection)
+            }
+          } }  
+        } }
+      }          // end of comments paths   
     } 
   } }  // end of exception handler and log
 
@@ -483,7 +554,7 @@ trait MusicRestService extends HttpService with CORSDirectives {
 
   
     /* overall route */
-  val musicRestRoute = tuneRoute ~ userRoute 
+  val musicRestRoute = tuneRoute ~ commentsRoute ~ userRoute 
 
   def paginationHeader(page: Int, totalPages: Long) : HttpHeaders.RawHeader = 
        HttpHeaders.RawHeader("Musicrest-Pagination", "[" + page + " of " + totalPages + "]")
@@ -508,6 +579,14 @@ trait MusicRestService extends HttpService with CORSDirectives {
   def establishGenres(implicit log: LoggingContext) =  {    
     supportedGenres.createGenreSubdirectories()
     log.info(s"genres: ${supportedGenres.rhythmMap}")
+  }
+  
+  /* return true if the logged-in user is the administrator or the owner of a resource */
+  def isOwnerOrAdministrator(owner: String, user : String): Boolean =
+    (owner, user) match {
+       case (_, "administrator") => true
+       case (o, u) => o == u
+       case _ => false
   }
   
  

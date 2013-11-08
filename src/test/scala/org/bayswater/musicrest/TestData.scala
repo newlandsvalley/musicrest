@@ -153,4 +153,30 @@ g2>f2 e2d2 e2c2 | c2Bc d2c2 B2A2 | E3A A2B2 c2B2  | G2A2 A8 :|"""
    tuneModel.delete("irish")
  } 
  
+  def commentableTune(i: Int) = s"""X: 1
+T: tune${i}
+M: 4/4
+L: 1/8
+R: reel
+K: Edor
+|: ABC ||"""
+ 
+  def insertCommentableTunes = {
+    val dbName = "tunedbtest"
+    val tuneModel = TuneModel()
+    tuneModel.delete("irish")
+    for (i <- 0 to 15) {
+      val abc = abcFor(commentableTune(i))
+      abc.fold(e => println("unexpected error in test data: " + e), 
+               s => s.insertIfNew("irish"))
+    }
+  }      
+  
+  def delay(tics: Int) =
+    try {
+      Thread.sleep(tics)
+    }
+    finally {
+    }              
+ 
 }

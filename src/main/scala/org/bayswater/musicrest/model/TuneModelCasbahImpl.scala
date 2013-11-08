@@ -142,10 +142,19 @@ class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: Stri
     tuneObjectToAbcMongo(opt, genre)
   }  
   
-  /** get the tune by its GUID.  Currently a tune's GUID is its ID and so this implementation 
-   *  can be identical to that of getTune.  However, if we refactor the data model
-   *  so that we revert to Mongo's own GUIDs for the mongo _id field, these implementations
-   *  will differ
+  /** get the tune reference (i.e. the _id GUID) */
+  def getTuneRef(genre: String, id: String): Option[ObjectId] = {    
+    val mongoCollection = mongoConnection(dbname)(genre)
+    val q = MongoDBObject(TuneModel.tuneKey -> id) 
+    val opt:Option[com.mongodb.DBObject] = mongoCollection.findOne(q)
+    opt.flatMap(o => o._id)
+  } 
+
+  
+  /** get the tune by its GUID.  Previously, a tune's GUID was its ID and so the implementation 
+   *  was identical to that of getTune.  However, we have now refactored the data model
+   *  so that we revert to Mongo's own GUIDs for the mongo _id field.
+   *  
    */
   def getTuneByGUID(genre: String, guid: String): Option[AbcMongo] = {
     val mongoCollection = mongoConnection(dbname)(genre)

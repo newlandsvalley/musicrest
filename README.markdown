@@ -54,6 +54,16 @@ URL path segments in italics represent fixed text; those in bold type are variab
 
 A user must be logged in before he can submit or test-transcode a tune.  Only the original submitter or the *administrator* user is allowed to delete tunes. There is also a fairly conventional set of URLs for user maintenance.
 
+Version 1.1.4 introduces the possibility of attaching comments to a tune:
+
+*  GET / _musicrest_ / _genre_ / **agenre** / _tune_ / **atune** / _comments_ - get the comments attached to a tune
+
+*  POST / _musicrest_ / _genre_ / **agenre** / _tune_ / **atune** / _comments_ - add or edit a comment and attach it to a tune
+
+*  GET / _musicrest_ / _genre_ / **agenre** / _tune_ / **atune** / _comment_ / **auser** / **acommentid** - get a particular comment (written by the user with this id)
+
+*  DELETE / _musicrest_ / _genre_ / **agenre** / _tune_ / **atune** / _comment_ / **auser** / **acommentid** - delete this comment
+
 Production of wav output is still supported, but deprecated.  It is too expensive to produce server-side unless you have a powerful server and a large data cache. 
 
 ##### URL Parameters

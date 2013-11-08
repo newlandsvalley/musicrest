@@ -59,8 +59,10 @@ trait TuneModel {
   def getSubmitter(genre: String, id: String): Option[String]  
   
   /** get the tune */
-  // def getTune(genre: String, id: String): Option[scala.collection.Map[String,String]]  
-  def getTune(genre: String, id: String): Option[AbcMongo]  
+  def getTune(genre: String, id: String): Option[AbcMongo]   
+  
+  /** get the tune reference (i.e. the _id GUID) */
+  def getTuneRef(genre: String, id: String): Option[ObjectId]  
   
   /** add a new title to a tune */ 
   def addAlternativeTitle(genre: String, id: String, title: String) : Validation[String, String]  

@@ -12,6 +12,12 @@ class UserModelCasbahImpl (val mongoConnection: MongoConnection, val dbname: Str
   val log = implicitly[LoggingContext]
   val mongoDB = MongoDB(mongoConnection, dbname) 
   
+  // set the write concern to Safe
+  val writeConcern:WriteConcern = {
+    mongoDB.setWriteConcern(WriteConcern.Safe)
+    mongoDB.getWriteConcern
+  }
+  
   def existsUser(id: String) : Boolean = {
     val mongoCollection = mongoConnection(dbname)("users")
     val opt = mongoCollection.findOneByID(id)

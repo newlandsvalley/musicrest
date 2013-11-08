@@ -19,7 +19,14 @@ trait MongoTransaction {
       b.success
     }
     catch {
-       case e: Exception  => e.getMessage().fail      
+       case me: com.mongodb.MongoException.DuplicateKey  => {
+         println("MONGO Duplicate key EXCEPTION ")
+         me.getMessage().fail      
+       }
+       case e: Exception  => {
+         println(s"MONGO EXCEPTION type: ${e.getClass()}")
+         e.getMessage().fail      
+       }
     }
     finally {
       mongoDB.requestDone      

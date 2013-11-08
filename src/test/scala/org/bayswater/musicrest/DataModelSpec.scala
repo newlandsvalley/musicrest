@@ -86,6 +86,18 @@ class DataModelSpec extends RoutingSpec with MusicRestService {
         case None => failure("No notes found")
       }
     }
+    "return the GUID of a tune" in {
+      val result = tuneModel.getTuneRef("irish", "noon lasses-reel")
+      val now = new java.util.Date()
+      result match {
+        case Some(s) =>  {
+          // rudimentary validation for a valid Mongo ObjectId
+          val earlier = new java.util.Date(s.getTime())
+          now.after(earlier) must_== (true)
+        }
+        case None => failure("No tune GUID found")
+      }
+    }
     "return a complete tune" in {
       val result = tuneModel.getNotes("irish", "noon lasses-reel")
       result match {
