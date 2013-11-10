@@ -18,6 +18,7 @@ package org.bayswater.musicrest.tools
 
 
 import com.mongodb.casbah.Imports._
+import org.bayswater.musicrest.model._
 
 object GenreInsert { 
   
@@ -29,6 +30,7 @@ object GenreInsert {
     
     val dbName = args(0)
     insertAllGenres(dbName)
+    ensureIndexes(dbName, List("irish", "scottish", "scandi", "klezmer"))
   }
  
   def insertAllGenres(dbName: String) {
@@ -49,5 +51,11 @@ object GenreInsert {
     builder += "rhythms" -> rhythms
     // val obj = MongoDBObject("rhythms" -> rhythms)
     mongoCollection += builder.result
+    println("insuring index on " + genre)
+  }
+  
+   private def ensureIndexes(dbName: String, genres: List[String]) {    
+    val tuneModel = new TuneModelCasbahImpl(MongoConnection(), dbName)
+    genres.foreach {g => tuneModel.createIndex(g) }
   }
 }

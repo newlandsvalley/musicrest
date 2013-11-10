@@ -17,18 +17,20 @@
 package org.bayswater.musicrest.model
 
 import spray.util.LoggingContext  
-import org.bayswater.musicrest.abc.{Abc, AbcMongo, TuneRef}
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.MongoDB
 import scalaz.Validation
 import scalaz.syntax.validation._
 import scala.collection.JavaConversions._
+import org.bayswater.musicrest.abc.{Abc, AbcMongo, TuneRef}
+import org.bayswater.musicrest.abc.SupportedGenres
 
 class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: String) extends TuneModel with MongoTransaction {  
   
   val log = implicitly[LoggingContext]
   val mongoDB = MongoDB(mongoConnection, dbname) 
- 
+  
+   
   // set the write concern to Safe
   val writeConcern:WriteConcern = {
     mongoDB.setWriteConcern(WriteConcern.Safe)
