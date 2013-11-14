@@ -330,13 +330,6 @@ trait MusicRestService extends HttpService with CORSDirectives {
             val page = pageStr.toInt
             val size = sizeStr.toInt
             // System.out.println("request for page: " + page)
-            /*
-            val tuneList = TuneList(genre, searchParams, sort, page, size)
-            val totalPages = (tuneList.totalResults + size - 1) / size 
-            val headers = List(paginationHeader(page, totalPages))
-            ctx.complete(200, headers, tuneList) 
-            * 
-            */
             ctx.complete {              
               val tuneList = TuneList(genre, searchParams, sort, page, size)
               val totalPages = (tuneList.totalResults + size - 1) / size 

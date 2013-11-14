@@ -206,9 +206,6 @@ class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: Stri
       (s"Tune title ${title} added").success
       }
   }  
-  
-
- 
    
   /** search the tune store
    * 
@@ -222,9 +219,9 @@ class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: Stri
   def search(genre: String, params: Map[String, String], sort: String, page: Int, size: Int):  Iterator[scala.collection.Map[String, String]] = {
     val mongoCollection = mongoConnection(dbname)(genre)
     val q = MongoDBObject.newBuilder
-    params.filterKeys(allowedSearchParam).foreach(p => q+= p._1 -> toRegex(p._2, p._1)  ) 
-    // params.foreach(p => q+= p)
-    
+    /* remove the paging and sorting params to leave just the search params */
+    params.filterKeys(removePagingAndSortingParam).foreach(p => q+= p._1 -> toRegex(p._2, p._1)  ) 
+   
     val skip = (page -1) * size
     // val fields = MongoDBObject("T" -> 1, "R" -> 2, "ts" -> 3) 
     // CHANGE FOR NEW DB
@@ -250,36 +247,14 @@ class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: Stri
     }    
   }  
   
-  /*  old version where we don't project alternative titles
-  def search(genre: String, params: Map[String, String], sort: String, page: Int, size: Int):  Iterator[scala.collection.Map[String, String]] = {
-    val mongoCollection = mongoConnection(dbname)(genre)
-    val q = MongoDBObject.newBuilder
-    params.filterKeys(allowedSearchParam).foreach(p => q+= p._1 -> toRegex(p._2, p._1)  ) 
-    // params.foreach(p => q+= p)
-    
-    val skip = (page -1) * size
-    // val fields = MongoDBObject("T" -> 1, "R" -> 2, "ts" -> 3)   
-    val fields = MongoDBObject("ts" -> 1)    
-    val s = if (sort == "date")
-      MongoDBObject("ts" -> -1)
-    else
-      MongoDBObject("_id" -> 1)
-      
-    for {
-      x <- mongoCollection.find(q.result, fields).sort(s).skip(skip).limit(size)
-    } yield x.mapValues(v => v.asInstanceOf[String])        
-  }  
-  */  
   
   def count(genre: String, params: Map[String, String]) : Long  = {
     val mongoCollection = mongoConnection(dbname)(genre)
     val q = MongoDBObject.newBuilder
-    params.filterKeys(allowedSearchParam).foreach(p => q+= p._1 -> toRegex(p._2, p._1)  )    
+    /* remove the paging and sorting params to leave just the search params */
+    params.filterKeys(removePagingAndSortingParam).foreach(p => q+= p._1 -> toRegex(p._2, p._1)  ) 
     mongoCollection.count(q.result)
-  }
-  
-  
-  
+  }  
   
    /** add a unique index on the genre */
   def createIndex(genre: String) = {
@@ -291,9 +266,7 @@ class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: Stri
      }
   }
   
-  /* implementation (not exposed)*/
-  
-  
+  /* implementation (not exposed)*/  
   
   /** Build a case-insensitive regex pattern from the match string.
    * e.g. Reel becomes ^[Rr][Ee][Ee][Ll]
@@ -334,7 +307,21 @@ class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: Stri
   }
   */  
   
-  private def allowedSearchParam(p: String): Boolean = List(TuneModel.tuneKey, "T", "O", "M", "Q", "Z", "K", "R", "abc", "submitter").contains(p)
+  /* no longer used - but these show some of the search keys that we expect 
+   private def allowedSearchParam(p: String): Boolean = {
+     println(s"filter key: ${p}")
+     List(TuneModel.tuneKey, "T", "O", "M", "Q", "Z", "K", "R", "abc", "submitter").contains(p)
+   }
+   * 
+   */
+   
+  /* Unfortunately, the search params come bundled with the paging and sorting params 
+   * 
+   * Filter them out
+   * */ 
+  private def removePagingAndSortingParam(p: String): Boolean = 
+    (p != "page" && p != "sort")
+  
   
 
 }
