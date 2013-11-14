@@ -107,6 +107,17 @@ class CommentsServiceSpec extends RoutingSpec with MusicRestService {
          responseAs[String] must contain(s"Comment deleted user: ${user}") 
          }
     }         
+     
+     "allow administrator to delete all comments and return success" in {
+       
+       val administrator ="administrator"       
+            
+       Delete("/musicrest/genre/irish/comments") ~>  Authorization(BasicHttpCredentials(administrator, "adm1n1str80r")) ~> commentsRoute ~> check  
+         { 
+         mediaType === MediaTypes.`text/plain`
+         responseAs[String] must_==("All comments removed for genre irish") 
+         }
+    }              
       
    "allow a valid user to edit a comment " in {      
       val ts = String.valueOf(System.currentTimeMillis())

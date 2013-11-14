@@ -64,6 +64,8 @@ Version 1.1.4 introduces the possibility of attaching comments to a tune:
 
 *  DELETE / _musicrest_ / _genre_ / **agenre** / _tune_ / **atune** / _comment_ / **auser** / **acommentid** - delete this comment
 
+*  DELETE / _musicrest_ / _genre_ / **agenre** / _comments_  - delete all comments in the genre
+
 Production of wav output is still supported, but deprecated.  It is too expensive to produce server-side unless you have a powerful server and a large data cache. 
 
 ##### URL Parameters

@@ -368,6 +368,17 @@ trait MusicRestService extends HttpService with CORSDirectives {
     handleExceptions(myExceptionHandler) { logRequestResponse(rrlogger) {
   
     pathPrefix("musicrest" / "genre" ) {
+      // we support a URL for deleting all comments within a genre but expect it will
+      // only really be used in testing or in initial setup
+      path(Segment / "comments" ) { genre => 
+        delete {
+          authenticate(BasicAuth(AdminAuthenticator, "musicrest")) { user =>   
+            complete { 
+              Comments.deleteAllComments(genre)
+              }       
+          }
+        } 
+      } ~
       path(Segment / "tune" / Segment / "comments" ) { (genre, tuneEncoded) => { 
         val tuneId = java.net.URLDecoder.decode(tuneEncoded, "UTF-8")        
         // return all comments associated with the tune 
@@ -376,7 +387,7 @@ trait MusicRestService extends HttpService with CORSDirectives {
             val commentsSeq = Comments.getComments(genre, tuneId)
             Comments(commentsSeq)
           } 
-        } ~
+        } ~ 
         post {
           authenticate(BasicAuth(UserAuthenticator, "musicrest")) { user =>   
             /* Post is used both for posting the original comment and editing a comment.
@@ -399,7 +410,7 @@ trait MusicRestService extends HttpService with CORSDirectives {
               }  }
             }
           }
-        }
+        }     
       } } ~    
       path(Segment / "tune" / Segment / "comment" / Segment / Segment ) { (genre, tuneEncoded, submitterEncoded, timestamp) =>  {
         val tuneId = java.net.URLDecoder.decode(tuneEncoded, "UTF-8")        
