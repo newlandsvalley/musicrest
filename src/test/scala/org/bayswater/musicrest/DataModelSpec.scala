@@ -24,6 +24,10 @@ import org.bayswater.musicrest.abc.Tune.AbcType
 import org.bayswater.musicrest.cache.Cache._
 import org.bayswater.musicrest.TestData._
 
+/** Note, some of these tests that involve multiple insert/replace attempts of the same tune require delays.
+ *  This is so as not only to emulate actual conditions but to take account of Mongo's seeming asynchronous nature.
+ * 
+ */
 class DataModelSpec extends RoutingSpec with MusicRestService {  
  
   def actorRefFactory = system
@@ -38,22 +42,39 @@ class DataModelSpec extends RoutingSpec with MusicRestService {
        
        val result = for {
          v <- validFigForaKiss
-         r <- v.insertIfNew("irish")
+         r <- v.upsert("irish")
        } yield r
        
        result.fold(e => failure("insertion failed: " + e), s => s.uri("irish") must_== ("http://localhost:8080/musicrest/genre/irish/tune/a+fig+for+a+kiss-slip+jig") )
     }  
-    "bar a second insertion of a tune" in {
-       val validFrahers = abcFor(frahers)
+    "bar a replacement of a tune by a different user" in {
+       val validFrahersU1 = abcFor(frahers, "test user")
+       val validFrahersU2 = abcFor(frahers, "untrustworthy user")
        
        val result = for {
-         v <- validFrahers
-         r1 <- v.insertIfNew("irish")
-         r2 <- v.insertIfNew("irish")
+         v1 <- validFrahersU1
+         v2 <- validFrahersU2
+         r1 <- v1.upsert("irish")
+         _ <- delay(4000)
+         r2 <- v2.upsert("irish")
        } yield r2
        
-       result.fold(e => e must_== ("Tune: fraher's jig-jig already exists"), s =>  failure("duplicate insertion allowed: "))
-    }
+       result.fold(e => e must_== ("Tune: fraher's jig-jig already exists - original submitter: test user"), 
+                        s =>  failure("duplicate insertion allowed: "))
+    }  
+    "allow a replacement of a tune by the original user" in {
+       val validTempest = abcFor(tempest, "test user")
+       
+       val result = for {
+         v <- validTempest
+         r1 <- v.upsert("irish")
+         _ <- delay(3000)
+         r2 <- v.upsert("irish")
+       } yield r2
+       
+       result.fold(e => failure("replacement by same user barred: " + e), 
+                   s => s.uri("irish") must_== ("http://localhost:8080/musicrest/genre/irish/tune/tempest-reel"))
+    }  
     "ensure index is unique in" in {
        val validFrahers = abcFor(noonLasses)
        
@@ -98,6 +119,29 @@ class DataModelSpec extends RoutingSpec with MusicRestService {
         case None => failure("No tune GUID found")
       }
     }
+    "allow the replacement of an existing tune" in {
+      val result = tuneModel.getTuneRef("irish", "noon lasses-reel")
+      result match {
+        case Some(ref) =>  {
+          // this tune already should exist in the db but we'll discriminate the update by adding a new title
+          val validNoonLasses = abcFor(noonLasses).flatMap(a => a.addAlternativeTitle("another title"))
+       
+          val result = for {
+            abc <- validNoonLasses
+            r <- TuneModel().replace(ref, "irish", abc)
+          } yield r 
+          
+          result.fold(e => failure("replacement failed: " + e), s => s must_== ("Tune Noon Lasses replaced in irish") )          
+          
+          val headersOpt = tuneModel.getAbcHeaders("irish", "noon lasses-reel")
+          headersOpt match {
+            case Some(hs) => hs must contain ("another title")
+            case None => failure("No tune headers read back after replacement")
+          }
+        }
+        case None => failure("Test data error - No original tune GUID found")
+      }      
+    }  
     "return a complete tune" in {
       val result = tuneModel.getNotes("irish", "noon lasses-reel")
       result match {
@@ -153,7 +197,7 @@ class DataModelSpec extends RoutingSpec with MusicRestService {
     "count the reels" in {
       val reels = Map("R" -> "reel")
       val count = tuneModel.count("irish", reels)
-      count must_== (2)
+      count must_== (3)
     }   
     "add an alternative title in" in {
       val genre = "irish"
@@ -180,9 +224,9 @@ class DataModelSpec extends RoutingSpec with MusicRestService {
     val tuneModel = TuneModel()
     tuneModel.delete("irish")
     val validNoonLasses = abcFor(noonLasses)
-    validNoonLasses.fold(e => println("unexpected error in test data: " + e), s => s.insertIfNew("irish"))  
+    validNoonLasses.fold(e => println("unexpected error in test data: " + e), s => s.upsert("irish"))  
     val validSpeedThePlough = abcFor(speedThePlough)
-    validSpeedThePlough.fold(e => println("unexpected error in test data: " + e), s => s.insertIfNew("irish"))  
+    validSpeedThePlough.fold(e => println("unexpected error in test data: " + e), s => s.upsert("irish"))  
     tuneModel.createIndex("irish")
   }
 

@@ -29,7 +29,10 @@ trait TuneModel {
   def testConnection(): Boolean
   
   /** insert a tune */
-  def insert(genre: String, abc:Abc): Validation[String, String] 
+  def insert(genre: String, abc:Abc): Validation[String, String]  
+  
+  /** replace an existing tune (i.e. one with an existing tune _id) */
+  def replace(id: ObjectId, genre: String, abc:Abc): Validation[String, String] 
   
   /** search by if to discover if the tune exists */
   def exists(genre: String, id: String) : Boolean

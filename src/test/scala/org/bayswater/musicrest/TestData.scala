@@ -16,9 +16,9 @@
 
 package org.bayswater.musicrest
 import java.net.URLEncoder
-
 import scala.io.Source
 import scalaz.Validation
+import scalaz.syntax.validation._
 import spray.http.FormData
 import org.bayswater.musicrest.abc.{Abc, AbcSubmission}
 import org.bayswater.musicrest.model.{TuneModel, UserModel, User, UnregisteredUser}
@@ -83,6 +83,17 @@ K: Edor
 |: g2e g2e edB | f2d dcd fed |1 g2e g2e edB |
 dBG GBd e2f :|2 gfe fed ecA | B/c/dB AGF E2F ||"""
     
+ val tempest = """X: 1
+T: Tempest
+R: reel
+M: 4/4
+L: 1/8
+K: Cmaj
+|:d2 cA GE E2|DEcE dEcE|d2 cA GE E2|DEAE GEDE|
+d2 cA GE E2|DEcE dEcE|DEFA GEcE|EDcG ED D2:|
+|:d2 ed cAGA|Addc AGEG|d2 ed cdef|edce d3 z|
+efdf edcA|dcAG AGEG|DEFA GEcE|EDcG ED D2:|"""
+   
 val hälleforsnäs = """X:1
 T:Polska fran Hälleforsnäs
 C:Fredrik Willhelm Larsson
@@ -168,13 +179,18 @@ K: Edor
     for (i <- 0 to 15) {
       val abc = abcFor(commentableTune(i))
       abc.fold(e => println("unexpected error in test data: " + e), 
-               s => s.insertIfNew("irish"))
+               s => s.upsert("irish"))
     }
   }      
   
-  def delay(tics: Int) =
+  /* wrap in a validation  so we can use in for loops */
+  def delay(tics: Int): Validation[String, String] =
     try {
       Thread.sleep(tics)
+      (s"delayed for ${tics} ms").success
+    }
+    catch {
+      case t: Throwable  =>  "delay interrupted".fail
     }
     finally {
     }              

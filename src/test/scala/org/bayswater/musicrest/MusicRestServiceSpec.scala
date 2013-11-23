@@ -255,7 +255,7 @@ class MusicRestServiceSpec extends RoutingSpec with MusicRestService {
    val tuneModel = TuneModel()
    tuneModel.delete("irish")
    val validNoonLasses = abcFor(noonLasses)
-   validNoonLasses.fold(e => println("unexpected error in test data: " + e), s => s.insertIfNew("irish"))  
+   validNoonLasses.fold(e => println("unexpected error in test data: " + e), s => s.upsert("irish"))  
   }  
 
 }

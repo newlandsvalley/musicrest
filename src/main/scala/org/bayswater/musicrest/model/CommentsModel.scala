@@ -34,7 +34,10 @@ trait CommentsModel {
   def deleteComment(genre: String, tuneId: String, user: String, cid: String) : Validation[String, String] 
   
   /** delete all comments for a genre */
-  def deleteAllComments(genre: String) : Validation[String, String]
+  def deleteAllComments(genre: String) : Validation[String, String] 
+  
+  /** delete all comments for a genre and tune */
+  def deleteComments(genre: String, tuneId: String) : Validation[String, String]
 
   /** get all comments */
   def getComments(genre: String, tune: String) : Seq[Comment]

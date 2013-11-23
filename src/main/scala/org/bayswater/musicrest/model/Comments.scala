@@ -57,6 +57,10 @@ object Comments {
   def deleteComment(genre: String, tuneId: String, user: String, cid: String) : Validation[String, String] =
     CommentsModel().deleteComment(genre, tuneId, user, cid)
     
+  /** delete all comments for a genre and tune */
+  def deleteComments(genre: String, tuneId: String) : Validation[String, String] = 
+    CommentsModel().deleteComments(genre, tuneId)
+    
    /** get all comments */
   def getComments(genre: String, tuneId: String ): Seq[Comment] =
     CommentsModel().getComments(genre, tuneId) 

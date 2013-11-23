@@ -56,6 +56,18 @@ class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: Stri
     "Tune " + abc.name + " inserted into " + genre
   } 
   
+  /** replace an existing tune (i.e. one with an existing tune _id) */
+  def replace(id: ObjectId, genre: String, abc:Abc): Validation[String, String] = withMongoPseudoTransction (mongoDB) {
+    val mongoCollection = mongoConnection(dbname)(genre)
+    val builder = MongoDBObject.newBuilder[String, String]
+    builder += "_id" -> id
+    builder += "T" -> abc.toAbcMongo.mongoTitles
+    builder ++= abc.toAbcMongo.kvs    
+    builder += TuneModel.tuneKey -> abc.id
+    mongoCollection += builder.result
+    "Tune " + abc.name + " replaced in " + genre
+  } 
+  
   def exists(genre: String, id: String) : Boolean = {
     val mongoCollection = mongoConnection(dbname)(genre)
     val q = MongoDBObject(TuneModel.tuneKey -> id) 

@@ -157,6 +157,21 @@ class CommentsModelNormalisedCasbahImpl(val mongoConnection: MongoConnection, va
     val result = mongoCollection.remove(MongoDBObject.empty)
     s"All comments removed for genre ${genre}"   
   }
+  
+  /** delete all comments for a genre and tune */
+  def deleteComments(genre: String, tuneId: String) : Validation[String, String]  = withMongoPseudoTransction (mongoDB) {  
+    log.info(s"Delete request for comments of ${genre} : ${tuneId}")
+    val optTuneRef = TuneModel().getTuneRef(genre, tuneId)
+    if (!optTuneRef.isDefined) {
+      s"Not found genre: ${genre} tune: ${tuneId}"
+    }
+    else {
+      val mongoCollection = mongoConnection(dbname)(genre + COMMENTS)     
+      val q = MongoDBObject("tid" -> optTuneRef.get)  
+      val result = mongoCollection.remove(q)
+      s"All comments deleted for genre: ${genre} and tune: ${tuneId}"   
+    }
+  }
 
 
   /** get all comments (will be empty naturally if the tune does not exist) */

@@ -101,7 +101,7 @@ class CommentsDataModelSpec extends Specification {
        result.fold(e => failure("retrieval failed: " + e), s => s must_== comment2 )
     }
    
-    "allow comments to be deleted" in {      
+    "allow individual comments to be deleted" in {      
        val ts = String.valueOf(System.currentTimeMillis())
        val comment = Comment("john", ts, "initial comment", "initial comment text")
        
@@ -109,6 +109,19 @@ class CommentsDataModelSpec extends Specification {
        val result = commentsModel.deleteComment("irish", "tune5-reel", comment.user, comment.cid)
        
        result.fold(e => failure("deletion failed"), s => s must_== (s"Comment deleted user: john id: ${ts} for tune: tune5-reel") )
+    }     
+    
+    "allow comment sets to be deleted" in {      
+       val ts = String.valueOf(System.currentTimeMillis())
+       val comment1 = Comment("john", ts, "comment 1 for set deletion test", "comment 1 for set deletion test")
+       val comment2 = Comment("john", ts, "comment 2 for set deletion test", "comment 2 for set deletion test")
+       
+       commentsModel.insertComment("irish", "tune6-reel", comment1) 
+       commentsModel.insertComment("irish", "tune6-reel", comment2)
+       
+       val result = commentsModel.deleteComments("irish", "tune6-reel")
+       
+       result.fold(e => failure("deletion failed"), s => s must_== (s"All comments deleted for genre: irish and tune: tune6-reel") )
     }   
     
    

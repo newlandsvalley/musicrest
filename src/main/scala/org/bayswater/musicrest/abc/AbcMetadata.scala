@@ -24,9 +24,11 @@ import spray.http.MediaType
 import com.mongodb.casbah.Imports._
 
 import java.io.{File,BufferedInputStream}
+import org.bayswater.musicrest.MusicRestSettings
 import org.bayswater.musicrest.typeconversion.Transcoder
-import net.liftweb.json._
+import org.bayswater.musicrest.cache.Cache._
 import org.bayswater.musicrest.model.TuneModel
+import net.liftweb.json._
 
 import scala.concurrent.{ ExecutionContext, Future, Promise }
 
@@ -47,7 +49,7 @@ class Abc(val titles: List[String], rhythm: String, headers: scala.collection.Ma
     val id = (name + "-" + tuneType).toLowerCase
     // val safeFileName = name.filter(_.isLetterOrDigit)
     val safeFileName = id.filter(_.isLetterOrDigit)
-    val submitter = headers.get("submitter").map(x => s"\nsubmitted by $x\n")
+    val submitter = headers.get("submitter")
     val abc = abcDirectives.getOrElse("") + abcHeaders + abcBody
     
     /** an option to stamp the ABC with an S header containing its musicrest URI */
@@ -116,7 +118,7 @@ class Abc(val titles: List[String], rhythm: String, headers: scala.collection.Ma
         }
     }  
     
-    def toHTML: String = (abc + submitter.getOrElse("")).foldLeft("")((b, c) => c match {
+    def toHTML: String = (abc + submitter.map(x => s"\nsubmitted by $x\n").getOrElse("")).foldLeft("")((b, c) => c match {
       case '<' => b + "&lt;"
       case '>' => b + "&gt;"
       case '\n' => b +  "<br />"
@@ -152,7 +154,7 @@ class Abc(val titles: List[String], rhythm: String, headers: scala.collection.Ma
         sb.toString
     }    
    
-    // not used at the moment - just done as a db update
+    // not used at the moment - just done as a db update - but used in tests
     def addAlternativeTitle(title: String) : Validation[String, Abc] = {
       if (titles.contains(title)) {
         // println("title: " + title + " already exists")
@@ -181,6 +183,9 @@ class Abc(val titles: List[String], rhythm: String, headers: scala.collection.Ma
     
     private def enQuote(s:String): String = "\"" + s + "\""    
     
+    /* insert the tune if it's new.  Deprecated in favour of upsert.
+     * Only used in BulkImport.
+     */
     def insertIfNew(genre: String): Validation[String, TuneRef] = 
       if (TuneModel().exists(genre, id)) {        
         ("Tune: " + id + " already exists").fail
@@ -188,6 +193,42 @@ class Abc(val titles: List[String], rhythm: String, headers: scala.collection.Ma
       else {
         TuneModel().insert(genre, this) flatMap ( t => (TuneRef(name, tuneType, id)).success)
       }    
+    
+    /** upsert:
+     *  
+     *  If the tune does not exist, insert it
+     *  If it does exist, and the submitter is identical to the original one, replace it  (i.e. allow updates)
+     *  otherwise raise a 'tune already exists' error
+     */
+    def upsert(genre: String): Validation[String, TuneRef] = {
+      val optOldRef = TuneModel().getTuneRef(genre, id)
+      
+      optOldRef match {
+        case None => TuneModel().insert(genre, this) flatMap ( t => (TuneRef(name, tuneType, id)).success)
+        case Some(originalId) => {
+          val oldSubmitter = TuneModel().getSubmitter(genre, id)
+          
+          if (submitter.isDefined) {
+            val oldSubmitterName = oldSubmitter.getOrElse("none")
+            val newSubmitterName = submitter.getOrElse("none")
+            
+            if (newSubmitterName === oldSubmitterName) {
+              // println(s"REPLACE - old submitter: ${oldSubmitterName} new submitter: ${newSubmitterName}")
+              // delete old setting of the tune from the file system cache
+              val dir = new File(MusicRestSettings.transcodeCacheDir)
+              clearTuneFromCache(dir, id)
+              TuneModel().replace(originalId, genre, this) flatMap ( t => (TuneRef(name, tuneType, id)).success)
+            }
+            else {
+              (s"Tune: ${id} already exists - original submitter: ${oldSubmitterName}").fail
+            }
+          }
+          else {
+            (s"internal error - could not find submitter of tune ${id}").fail
+          }
+        }
+      }
+    }
     
     def validTuneRef(genre: String): Validation[String, TuneRef] = (TuneRef(name, tuneType, id)).success 
    

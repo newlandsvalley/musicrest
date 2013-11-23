@@ -160,7 +160,7 @@ trait MusicRestService extends HttpService with CORSDirectives {
                   abc <- validAbc 
                   // we will try to transcode immediately to png which might cause further errors
                   t <- abc.to(`image/png`)
-                  success <- abc.insertIfNew(genre)
+                  success <- abc.upsert(genre)
                 } yield {success}
                 response               
               }
@@ -196,9 +196,11 @@ trait MusicRestService extends HttpService with CORSDirectives {
               case _ => false
             }
             if (authorized) complete {
-              // delete from the file systen cache
+              // delete from the file system cache
               val dir = new File(MusicRestSettings.transcodeCacheDir)
               clearTuneFromCache(dir, tune)
+              // delete all related comments 
+              Comments.deleteComments(genre, tune)
               // delete from the database
               val result = TuneModel().delete(genre, tune)
               result
