@@ -240,8 +240,23 @@ class MusicRestServiceSpec extends RoutingSpec with MusicRestService {
         checkHeader(header("Access-Control-Allow-Origin"), "Access-Control-Allow-Origin")
         checkHeader(header("Access-Control-Allow-Credentials"), "Access-Control-Allow-Credentials")
       }
-    }       
+    }   
     
+    "return appropriate text/html content when requested for a tune list with a question mark in the name" in {
+      Get("/musicrest/genre/scandi/tune") ~> addHeader("Accept", "text/html")  ~> musicRestRoute ~> check {
+        mediaType === MediaTypes.`text/html`
+        responseAs[String] must contain("""<td><a href="genre/scandi/tune/var+det+du+eller+var+det+jag%3F-waltz" >var det du eller var det jag?</a>""")
+        responseAs[String] must contain("""<span class="tunelist" page="1" size="10" >""")
+      }
+    }  
+    
+    "return appropriate text/html content when searching for tunes with a question mark in the name" in {
+      Get("/musicrest/genre/scandi/search") ~> addHeader("Accept", "text/html")  ~> musicRestRoute ~> check {
+        mediaType === MediaTypes.`text/html`
+        responseAs[String] must contain("""<td><a href="genre/scandi/tune/var+det+du+eller+var+det+jag%3F-waltz" >var det du eller var det jag?</a>""")
+        responseAs[String] must contain("""<span class="tunelist" page="1" size="10" >""")
+      }
+    }    
  
   }
    
@@ -254,8 +269,11 @@ class MusicRestServiceSpec extends RoutingSpec with MusicRestService {
    val dbName = "tunedbtest"
    val tuneModel = TuneModel()
    tuneModel.delete("irish")
+   tuneModel.delete("scandi")
    val validNoonLasses = abcFor(noonLasses)
-   validNoonLasses.fold(e => println("unexpected error in test data: " + e), s => s.upsert("irish"))  
+   validNoonLasses.fold(e => println("unexpected error (noon lasses) in test data: " + e), s => s.upsert("irish"))  
+   val validVardet = abcFor(vardet)
+   validVardet.fold(e => println("unexpected error (vardet) in test data: " + e), s => s.upsert("scandi"))  
   }  
 
 }

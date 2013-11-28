@@ -107,6 +107,18 @@ E4 A4 B4 | c2Bc d2c2 B2A2 | E3A A2B2 c2B2 |1 G2A2 A4 dcBA :| |2 G2A2 A8 |
 |: g2>f2 e2d2 e2c2 | c2Bc d2c2 B2A2 | E3A A2B2 c2d2 | e2fe d2ef e4 |
 g2>f2 e2d2 e2c2 | c2Bc d2c2 B2A2 | E3A A2B2 c2B2  | G2A2 A8 :|"""
   
+val vardet = """X: 1
+T: Var det du eller var det jag?
+O: Ryd, Öland
+S: Efter Anders Johan Eriksson
+R: Waltz
+M: 3/4
+K: Ador
+L: 1/8
+|:AB | (c2 c)dBc | A2>B2cd | e2 g2 f2 | e4 :|
+|: e2 | e2 c2 ec | c2 ec eg | f2 d2 (fd) |
+d2 fd fg | (e2>d2)cB | A4 c2 | B2 G2 G2 | A4 :|"""
+  
   
   def abcFor(content: String, submitter: String): Validation[String, Abc] = {
     val lines = Source.fromString(content).getLines

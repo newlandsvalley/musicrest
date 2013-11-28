@@ -17,3 +17,5 @@ src_managed/
 test-output/
 *.iml
 build.sbt.1.1M8
+DBbackup.sh
+DBrestore.sh

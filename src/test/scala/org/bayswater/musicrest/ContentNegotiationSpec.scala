@@ -140,7 +140,7 @@ class ContentNegotiationSpec extends RoutingSpec with MusicRestService {
     }          
   
    /* Tune Lists */
-   "return text/xml content when requested for a genre list of this type" in {
+   "return text/xml content when requested for a tune list of this type" in {
       Get("/musicrest/genre/irish/tune") ~> addHeader("Accept", "text/xml")  ~> musicRestRoute ~> check {
         mediaType === MediaTypes.`text/xml`
         responseAs[String] must contain("<tunes>")
@@ -150,7 +150,7 @@ class ContentNegotiationSpec extends RoutingSpec with MusicRestService {
       }
     }      
    
-    "return application/json content when requested for a genre list of this type" in {
+    "return application/json content when requested for a tune list of this type" in {
       Get("/musicrest/genre/irish/tune") ~> addHeader("Accept", "application/json")  ~> musicRestRoute ~> check {
         mediaType === MediaTypes.`application/json`
         responseAs[String] must contain(""""uri": "noon+lasses-reel"""")
@@ -159,7 +159,7 @@ class ContentNegotiationSpec extends RoutingSpec with MusicRestService {
       }
     }  
     
-  "return text/html content when requested for a genre list of this type" in {
+  "return text/html content when requested for a tune list of this type" in {
       Get("/musicrest/genre/irish/tune") ~> addHeader("Accept", "text/html")  ~> musicRestRoute ~> check {
         mediaType === MediaTypes.`text/html`
         responseAs[String] must contain("""<td><a href="genre/irish/tune/noon+lasses-reel" >noon lasses</a>""")
