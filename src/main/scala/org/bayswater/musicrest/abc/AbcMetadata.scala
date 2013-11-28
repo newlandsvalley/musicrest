@@ -28,6 +28,7 @@ import org.bayswater.musicrest.MusicRestSettings
 import org.bayswater.musicrest.typeconversion.Transcoder
 import org.bayswater.musicrest.cache.Cache._
 import org.bayswater.musicrest.model.TuneModel
+import org.bayswater.musicrest.Util._
 import net.liftweb.json._
 
 import scala.concurrent.{ ExecutionContext, Future, Promise }
@@ -395,7 +396,7 @@ object AbcSubmission {
           // we'll treat the title header separately
           case titleExtractor(hname, hvalue) => {
             // println("Got Title: " + hvalue)
-            titles.append ( hvalue.trim() )
+            titles.append ( hvalue.filter(c => isAcceptableURLCharacter(c)).trim() )
             sbHeaders.append(cleanLine + "\n")
             }
           case tuneKeyExtractor(hname, hvalue) => {

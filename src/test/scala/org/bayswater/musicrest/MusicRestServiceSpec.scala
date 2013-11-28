@@ -245,7 +245,8 @@ class MusicRestServiceSpec extends RoutingSpec with MusicRestService {
     "return appropriate text/html content when requested for a tune list with a question mark in the name" in {
       Get("/musicrest/genre/scandi/tune") ~> addHeader("Accept", "text/html")  ~> musicRestRoute ~> check {
         mediaType === MediaTypes.`text/html`
-        responseAs[String] must contain("""<td><a href="genre/scandi/tune/var+det+du+eller+var+det+jag%3F-waltz" >var det du eller var det jag?</a>""")
+        /* this tests that the ? character is removed from tune ids because it interferes with URLs */
+        responseAs[String] must contain("""<td><a href="genre/scandi/tune/var+det+du+eller+var+det+jag-waltz" >var det du eller var det jag</a>""")
         responseAs[String] must contain("""<span class="tunelist" page="1" size="10" >""")
       }
     }  
@@ -253,7 +254,8 @@ class MusicRestServiceSpec extends RoutingSpec with MusicRestService {
     "return appropriate text/html content when searching for tunes with a question mark in the name" in {
       Get("/musicrest/genre/scandi/search") ~> addHeader("Accept", "text/html")  ~> musicRestRoute ~> check {
         mediaType === MediaTypes.`text/html`
-        responseAs[String] must contain("""<td><a href="genre/scandi/tune/var+det+du+eller+var+det+jag%3F-waltz" >var det du eller var det jag?</a>""")
+        /* this tests that the ? character is removed from tune ids because it interferes with URLs */
+        responseAs[String] must contain("""<td><a href="genre/scandi/tune/var+det+du+eller+var+det+jag-waltz" >var det du eller var det jag</a>""")
         responseAs[String] must contain("""<span class="tunelist" page="1" size="10" >""")
       }
     }    

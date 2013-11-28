@@ -182,6 +182,7 @@ trait MusicRestService extends HttpService with CORSDirectives {
         // get a tune (in whatever format)         
         get { 
           val tune = java.net.URLDecoder.decode(tuneEncoded, "UTF-8")
+          // logger.info(s"get - tune name encoded: ${tuneEncoded} decoded: ${tune}")
             complete(Tune(genre, tune) ) 
         } ~
         delete {       

@@ -135,5 +135,9 @@ object Util {
    
    def formatJSON (name: String, value: String) : String = "\"" + name + "\"" + ": " + "\"" + value + "\" "
    
+   /* we don't want special URI characters in tune names which form part of a URL */
+   def isAcceptableURLCharacter(c: Char): Boolean =
+     ((c != '?') && (c != '&'))
+   
       
 }  
