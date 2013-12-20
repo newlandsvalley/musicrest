@@ -105,8 +105,6 @@ trait MusicRestService extends HttpService with CORSDirectives {
    * overall route is musicRestRoute = tuneRoute ~ userRoute
    */
   val tuneRoute =  
-    handleExceptions(myExceptionHandler) { logRequestResponse(rrlogger) {
-    // val tuneRoute =  
     pathPrefix("musicrest") {   
       pathEndOrSingleSlash {     
         get {
@@ -364,12 +362,10 @@ trait MusicRestService extends HttpService with CORSDirectives {
         }
       }          // end of path prefix musicrest/genre          
     } 
-  } }  // end of exception handler and log
+ 
   
   
   val commentsRoute =  
-    handleExceptions(myExceptionHandler) { logRequestResponse(rrlogger) {
-  
     pathPrefix("musicrest" / "genre" ) {
       // we support a URL for deleting all comments within a genre but expect it will
       // only really be used in testing or in initial setup
@@ -443,11 +439,11 @@ trait MusicRestService extends HttpService with CORSDirectives {
         } }
       }          // end of comments paths   
     } 
-  } }  // end of exception handler and log
+ 
 
   
   /* route that deal with user maintenance */ 
-  val userRoute =
+  val userRoute =         
     pathPrefix("musicrest") {
       path("user") { 
        post { 
@@ -558,10 +554,16 @@ trait MusicRestService extends HttpService with CORSDirectives {
         } 
       } 
     }
+  
 
   
-    /* overall route */
-  val musicRestRoute = tuneRoute ~ commentsRoute ~ userRoute 
+  /* overall route */
+  val musicRestRoute =   
+    handleExceptions(myExceptionHandler) { 
+      logRequestResponse(rrlogger) {
+        tuneRoute ~ commentsRoute ~ userRoute 
+      }
+  }
 
   def paginationHeader(page: Int, totalPages: Long) : HttpHeaders.RawHeader = 
        HttpHeaders.RawHeader("Musicrest-Pagination", "[" + page + " of " + totalPages + "]")

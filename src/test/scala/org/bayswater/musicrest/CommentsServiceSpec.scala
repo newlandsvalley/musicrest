@@ -127,7 +127,8 @@ class CommentsServiceSpec extends RoutingSpec with MusicRestService {
       Post("/musicrest/genre/irish/tune/tune5-reel/comments", CommentTestData.commentForm(user, 1, ts)) ~>  Authorization(BasicHttpCredentials(user, "passw0rd1")) ~> commentsRoute
       delay(200)
       Post("/musicrest/genre/irish/tune/tune5-reel/comments", CommentTestData.commentForm(user, 2, ts)) ~>  Authorization(BasicHttpCredentials(user, "passw0rd1")) ~> commentsRoute
-       
+      delay(200)
+      
       Get(s"/musicrest/genre/irish/tune/tune5-reel/comment/${userEncoded}/${ts}") ~> addHeader("Accept", "application/json")  ~> commentsRoute ~> check {       
         responseAs[String] must contain(""""subject": "subject 2"""") 
         mediaType === MediaTypes.`application/json`
@@ -171,7 +172,7 @@ class CommentsServiceSpec extends RoutingSpec with MusicRestService {
        val userEncoded = java.net.URLEncoder.encode(user, "UTF-8")  
        
        Post("/musicrest/genre/irish/tune/tune8-reel/comments", CommentTestData.commentForm(user, 4, ts)) ~>  Authorization(BasicHttpCredentials(user, "passw0rd1")) ~> commentsRoute      
-       
+       delay(200)
        Get(s"/musicrest/genre/irish/tune/tune8-reel/comment/${userEncoded}/${ts}") ~> addHeader("Accept", "application/json")  ~> commentsRoute ~> check {
        
         responseAs[String] must contain(""""subject": "subject 4"""") 

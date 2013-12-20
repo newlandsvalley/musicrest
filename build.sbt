@@ -2,7 +2,7 @@ import AssemblyKeys._
 
 assemblySettings
 
-name  := "musicrest-nightly"
+name  := "musicrest-2.10-1.1.4"
 
 jarName in assembly := "musicrest-2.10-1.1.4.jar"
 
@@ -37,9 +37,9 @@ libraryDependencies ++= Seq(
 
 fork := true
 
-javaOptions in run += "-Dconfig.file=/home/john/Development/Workspace/Spray/musicrest-nightly/conf/musicrest.conf"
+javaOptions in run += "-Dconfig.file=/home/john/Development/Workspace/Spray/musicrest/conf/musicrest.conf"
 
-javaOptions in test += "-Dconfig.file=/home/john/Development/Workspace/Spray/musicrest-nightly/conf/test.conf"
+javaOptions in test += "-Dconfig.file=/home/john/Development/Workspace/Spray/musicrest/conf/test.conf"
 
 net.virtualvoid.sbt.graph.Plugin.graphSettings
 

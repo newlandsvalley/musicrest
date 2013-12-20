@@ -1,5 +1,5 @@
 <projectDescription>
-  <name>musicrest-nightly</name>
+  <name>musicrest-2.10-1.1.4</name>
   <buildSpec>
     <buildCommand>
       <name>org.scala-ide.sdt.core.scalabuilder</name>
