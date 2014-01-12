@@ -33,20 +33,10 @@ URL path segments in italics represent fixed text; those in bold type are variab
 *  DELETE / _musicrest_ / _genre_  / **agenre** / _tune_ / **atune** - delete the tune from the database.
 
 *  GET / _musicrest_ / _genre_ / **agenre** / _tune_ / **atune** / _exists_ - return true if the tune exists
+
+*  GET / _musicrest_ / _genre_ / **agenre** / _tune_ / **atune** / **format** - get a tune the requested format (which can be abc, html, wav, pdf, ps or midi)
  
-*  GET / _musicrest_ / _genre_ / **agenre** / _tune_ / **atune** / _abc_ - get a tune in ABC (plain text) format
-
-*  GET / _musicrest_ / _genre_ / **agenre** / _tune_ / **atune** / _html_ - get a tune in ABC html format
-
 *  POST / _musicrest_ / _genre_ / **agenre** / _tune_ / **atune** / _abc_ - add an alternative title to the tune
-
-*  GET / _musicrest_ / _genre_ / **agenre** / _tune_ / **atune** / _wav_ - get a tune in wav format
-
-*  GET / _musicrest_ / _genre_ / **agenre** / _tune_ / **atune** / _ps_ - get a tune in Postscript format
-
-*  GET / _musicrest_ / _genre_ / **agenre** / _tune_ / **atune**/ _pdf_ - get a tune in pdf format
-
-*  GET / _musicrest_ / _genre_ / **agenre** / _tune_ / **atune** / _midi_ - get a tune in midi format
 
 *  GET / _musicrest_ / _genre_ / _search_ - get a paged list of tunes that correspond to the search parameters.
 
