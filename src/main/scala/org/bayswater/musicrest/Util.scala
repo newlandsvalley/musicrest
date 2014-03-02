@@ -137,7 +137,7 @@ object Util {
    
    /* we don't want special URI characters in tune names which form part of a URL */
    def isAcceptableURLCharacter(c: Char): Boolean =
-     ((c != '?') && (c != '&'))
+     ((c != '?') && (c != '&') && (c != '#'))
    
       
 }  
