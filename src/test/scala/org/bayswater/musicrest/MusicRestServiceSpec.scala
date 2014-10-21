@@ -111,7 +111,14 @@ class MusicRestServiceSpec extends RoutingSpec with MusicRestService {
         responseAs[String] must contain("S: ")
         mediaType === AbcType
       }
-    }   
+    }     
+    
+    "return content disposition header when requested for an abc tune" in {
+      Get("/musicrest/genre/irish/tune/noon+lasses-reel/abc") ~>  musicRestRoute ~> check {
+        println(s"Content disposition response headers ${headers}")
+        checkHeaderValue(header("Content-Disposition"), "Content-Disposition", "attachment; filename=noonlassesreel.abc")
+      }
+    }      
     
     "return audio/wav content when requested in the url for tunes of this type" in {
       Get("/musicrest/genre/irish/tune/noon+lasses-reel/wav") ~> musicRestRoute ~> check {
@@ -242,6 +249,14 @@ class MusicRestServiceSpec extends RoutingSpec with MusicRestService {
       }
     }   
     
+   /* really we should have equivalent tests for midi and ps but the code is generic and I can't be bothered */
+   "return content disposition header when requested for a pdf tune" in {
+      Get("/musicrest/genre/irish/tune/noon+lasses-reel/pdf") ~>  musicRestRoute ~> check {
+        println(s"Content disposition response headers ${headers}")
+        checkHeaderValue(header("Content-Disposition"), "Content-Disposition", "attachment; filename=noonlassesreel.pdf")
+      }
+    }      
+    
     "return appropriate text/html content when requested for a tune list with a question mark in the name" in {
       Get("/musicrest/genre/scandi/tune") ~> addHeader("Accept", "text/html")  ~> musicRestRoute ~> check {
         mediaType === MediaTypes.`text/html`
@@ -262,9 +277,18 @@ class MusicRestServiceSpec extends RoutingSpec with MusicRestService {
  
   }
    
-   def checkHeader(h: Option[spray.http.HttpHeader], expected: String): Boolean = h match {
+  /** check a header is present */
+  def checkHeader(h: Option[spray.http.HttpHeader], expected: String): Boolean = h match {
     case None => failure(s"No ${expected} header present")
     case Some(h) => h.name must contain (expected)
+  }  
+   
+  /* check a header is present with the expected value */
+  def checkHeaderValue(h: Option[spray.http.HttpHeader], expectedName: String, expectedValue: String): Boolean = h match {
+    case None => failure(s"No ${expectedName} header present")
+    case Some(h) => {
+      h.value must contain (expectedValue)
+    }
   }  
   
  def insertTune = {

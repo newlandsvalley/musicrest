@@ -34,4 +34,14 @@ trait CORSDirectives  { this: HttpService =>
           }      
         }
       }
+  
+  /** this is similar to CORS in that a browser will now ignore a download attribute within a request for
+   *  a resource from an anchor tag if the URL represents a cross-origin resource.  We want to produce such a 
+   *  direct link to the (cross-origin) backend for file downloads.  One way to circumvent this is for the 
+   *  backend to indicate the download file name by means of the content-disposition header
+   */
+  def suggestDownloadFileName(filetype: String, tune: String) =
+    respondWithHeaders (      
+      HttpHeaders.`Content-Disposition`("attachment", Map("filename" -> s"$tune.$filetype"))
+    )
 }

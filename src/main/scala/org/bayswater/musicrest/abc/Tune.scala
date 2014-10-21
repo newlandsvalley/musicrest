@@ -55,6 +55,8 @@ case class Tune(genre: String, name: String) {
   // as a boolean string value 
   def exists(): String =
     Tune.exists(this).toString
+    
+  def safeFileName = name.filter(_.isLetterOrDigit) 
 }
 
 object Tune {  

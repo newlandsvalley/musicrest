@@ -2,13 +2,13 @@ import AssemblyKeys._
 
 assemblySettings
 
-name  := "musicrest-2.10-1.1.4"
+name  := "musicrest-2.10"
 
-jarName in assembly := "musicrest-2.10-1.1.4.jar"
+version := "1.1.5"
+
+jarName in assembly <<= (name, version) map { (n, v) => n + "-" + v + ".jar" }
 
 organization  := "org.bayswater.musicrest"
-
-version       := "1.1.4"
 
 scalaVersion  := "2.10.2"
 

@@ -231,12 +231,16 @@ trait MusicRestService extends HttpService with CORSDirectives {
         } 
       } ~     
       path(Segment / "tune" / Segment / "abc" ) { (genre, tuneEncoded) => 
-        // get a tune (in abc defined by abc.vnd (plain text) format)         
+        // get a tune (in abc defined by abc.vnd (plain text) format)     
+        // as for binary types, suggest a file name for use with download attributes
         get {   
           respondWithMediaType(Tune.AbcType) {
-            complete{
-              val tuneNotes = java.net.URLDecoder.decode(tuneEncoded, "UTF-8")
-              Tune(genre, tuneNotes).asAbc             
+            val tuneName = java.net.URLDecoder.decode(tuneEncoded, "UTF-8") 
+            val tune = Tune(genre, tuneName)
+            suggestDownloadFileName("abc", tune.safeFileName) {
+              complete{
+                tune.asAbc      
+              }
             }
           } 
         } ~
@@ -295,20 +299,25 @@ trait MusicRestService extends HttpService with CORSDirectives {
        *  CORS.  We need to allow cross-origin requests from tradtunedb for midi tunes.  At the moment
        *  we just return origin '*' as a rough and ready response whilst we await the full CORS
        *  implementation in Spray.
+       *  
+       *  Anchor tag download attribute in prospective clients:  we offer a suggested file name by means of
+       *  the content-disposition header
        */      
       path(Segment / "tune" / Segment / Segment ) { (genre, tuneEncoded, fileType) =>  
         get { 
           val contentTypeOpt = getContentTypeFromFileType(fileType:String)
           if (contentTypeOpt.isDefined) {
             respondWithMediaType(contentTypeOpt.get.mediaType) { 
-              corsFilter(MusicRestSettings.corsOrigins) {
-              // respondWithCORSHeaders("*") {
-                val tune = java.net.URLDecoder.decode(tuneEncoded, "UTF-8") 
-                 _.complete {
-                   // val futureBin:Future[Validation[String, BinaryImage]] = Tune(genre, tune).asFutureBinary(fileType) 
-                   val futureBin = Tune(genre, tune).asFutureBinary(contentTypeOpt.get)
-                   futureBin
-                 }
+              val tuneName = java.net.URLDecoder.decode(tuneEncoded, "UTF-8") 
+              val tune = Tune(genre, tuneName)
+              suggestDownloadFileName(fileType, tune.safeFileName) {
+                corsFilter(MusicRestSettings.corsOrigins) {      
+                   _.complete {
+                     // val futureBin:Future[Validation[String, BinaryImage]] = Tune(genre, tune).asFutureBinary(fileType) 
+                     val futureBin = tune.asFutureBinary(contentTypeOpt.get)
+                     futureBin
+                  }
+                }
               }
             }
           }
