@@ -21,6 +21,6 @@ uname=$3
 password=$4
 email=$5
 
-java -Dconfig.file=conf/musicrest.conf -classpath target/scala-2.10/musicrest-2.10-1.1.4.jar org.bayswater.musicrest.tools.RemoteUserInsert $server $adminpass $uname $password $email
+java -Dconfig.file=conf/musicrest.conf -classpath target/scala-2.10/musicrest-2.10-1.1.5.jar org.bayswater.musicrest.tools.RemoteUserInsert $server $adminpass $uname $password $email
 
 exit $retcode

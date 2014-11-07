@@ -39,7 +39,7 @@ object GenreInsert {
     
     insert(mongoCollection, "irish", MongoDBList("jig","reel","hornpipe","barndance","highland","march","mazurka","polka","slide","slip jig","waltz"))
     insert(mongoCollection, "scottish", MongoDBList("jig","reel","hornpipe","barndance","march","schottische","slip jig","strathspey","waltz"))
-    insert(mongoCollection, "scandi", MongoDBList("polska","brudmarsch","gånglåt","skänklåt","slängpolska","polka","långdans","marsch","schottis","waltz"))    
+    insert(mongoCollection, "scandi", MongoDBList("polska","brudmarsch","gånglåt","skänklåt","slängpolska","polka","långdans","marsch","schottis","engelska","waltz"))    
     insert(mongoCollection, "klezmer", MongoDBList("bulgar","freylekhs","khosidl","hora", "csardas","doina", "honga", "hopak","kasatchok",
                              "kolomeyke","sher","sirba","skotshne","taksim","terkish"))    
   }
