@@ -43,7 +43,7 @@ class AbcSpec extends Specification {
         v.fold(e => failure("parse should succeed but failed: " + e), s => {
           s.name must_== ("Noon Lasses")
           s.timeSignature must_== (Some("4/4"))
-          s.author must_== (None)
+          s.author must_== (Some("John Watson 12/11/2014"))
           s.key must_== (Some("Gmaj"))
           s.tuneType must_== ("reel")
         })
@@ -93,6 +93,13 @@ class AbcSpec extends Specification {
     "Reject a tune with a bad rhythm" in {      
         val v = getValidTune(badData.badrhythm)
         v.fold(e => e must_== ("foo is not a recognized rhythm for the irish genre"), s => failure("accepted tune with unknown rhythm" ))
+    }
+    "Suppress self references in tune sources" in {      
+        // (frahers has a reference S:http://someServer/musicrest/genre/irish/frahers)
+        val v = getValidTune(frahers)
+        v.fold(e => failure("parse should succeed but failed: " + e), s => {
+           s.source must_== (None)
+        })        
     }
   }
   

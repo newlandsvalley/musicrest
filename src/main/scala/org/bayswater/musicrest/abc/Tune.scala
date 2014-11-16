@@ -40,10 +40,14 @@ case class Tune(genre: String, name: String) {
   def asHtml: Validation[String, String] =
      Tune.tuneToValidString(this,  ContentType(MediaTypes.`text/html`)) 
      
+  // as json
+  def asJson: Validation[String, String] =
+     Tune.tuneToValidString(this,  ContentTypes.`application/json`) 
+     
   // as ABC
   def asAbc: Validation[String, String] =
      Tune.tuneToValidString(this,  ContentType(Tune.AbcType))
-
+     
   // as a future binary representation defined by the requested file type extension
   def asFutureBinary(contentType: ContentType)(implicit executor: ExecutionContext): Future[Validation[String, BinaryImage]] =
      Tune.tuneToFutureBinary(this, contentType) 

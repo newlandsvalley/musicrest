@@ -24,12 +24,13 @@ import scalaz.Validation
 import scalaz.Scalaz._
 import org.bayswater.musicrest.model.TuneModel
 import org.bayswater.musicrest.MusicRestSettings
+import org.bayswater.musicrest.Util._
 
 // class GenreList(s: scala.collection.Set[String]) {  
 class GenreList(s: List[String]) {  
   
   def toJSON: String = {
-    val quoteds = s.map( x => "\"" + x + "\"")
+    val quoteds = s.map( x => "\"" + encodeJSON(x) + "\"")
     "{ " + "\"genre\"" + " :" + quoteds.mkString("[", ",", "]") + " }"
   }
   

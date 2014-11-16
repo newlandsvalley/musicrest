@@ -38,7 +38,7 @@ class DataModelSpec extends RoutingSpec with MusicRestService {
   "DataModel" should {
     
     "allow the insert of a new tune" in {
-       val validFigForaKiss = abcFor(figForaKiss)
+       val validFigForaKiss = abcFor("irish", figForaKiss)
        
        val result = for {
          v <- validFigForaKiss
@@ -48,8 +48,8 @@ class DataModelSpec extends RoutingSpec with MusicRestService {
        result.fold(e => failure("insertion failed: " + e), s => s.uri("irish") must_== ("http://localhost:8080/musicrest/genre/irish/tune/a+fig+for+a+kiss-slip+jig") )
     }  
     "bar a replacement of a tune by a different user" in {
-       val validFrahersU1 = abcFor(frahers, "test user")
-       val validFrahersU2 = abcFor(frahers, "untrustworthy user")
+       val validFrahersU1 = abcFor("irish", frahers, "test user")
+       val validFrahersU2 = abcFor("irish", frahers, "untrustworthy user")
        
        val result = for {
          v1 <- validFrahersU1
@@ -63,7 +63,7 @@ class DataModelSpec extends RoutingSpec with MusicRestService {
                         s =>  failure("duplicate insertion allowed: "))
     }  
     "allow a replacement of a tune by the original user" in {
-       val validTempest = abcFor(tempest, "test user")
+       val validTempest = abcFor("irish", tempest, "test user")
        
        val result = for {
          v <- validTempest
@@ -76,7 +76,7 @@ class DataModelSpec extends RoutingSpec with MusicRestService {
                    s => s.uri("irish") must_== ("http://localhost:8080/musicrest/genre/irish/tune/tempest-reel"))
     }  
     "ensure index is unique in" in {
-       val validFrahers = abcFor(noonLasses)
+       val validFrahers = abcFor("irish", noonLasses)
        
        val result = for {
          v <- validFrahers
@@ -124,7 +124,7 @@ class DataModelSpec extends RoutingSpec with MusicRestService {
       result match {
         case Some(ref) =>  {
           // this tune already should exist in the db but we'll discriminate the update by adding a new title
-          val validNoonLasses = abcFor(noonLasses).flatMap(a => a.addAlternativeTitle("another title"))
+          val validNoonLasses = abcFor("irish", noonLasses).flatMap(a => a.addAlternativeTitle("another title"))
        
           val result = for {
             abc <- validNoonLasses
@@ -153,7 +153,7 @@ class DataModelSpec extends RoutingSpec with MusicRestService {
       val genre = "irish"
 
       // ensure we have a fig for a kiss in the db (which sorts first)
-      val validFigForaKiss = abcFor(figForaKiss)       
+      val validFigForaKiss = abcFor("irish", figForaKiss)       
       val result = for {
          v <- validFigForaKiss
          r <- tuneModel.insert(genre, v)
@@ -222,10 +222,11 @@ class DataModelSpec extends RoutingSpec with MusicRestService {
     println("insertTunes")
     val dbName = "tunedbtest"
     val tuneModel = TuneModel()
-    tuneModel.delete("irish")
-    val validNoonLasses = abcFor(noonLasses)
+    val genre = "irish"
+    tuneModel.delete(genre)
+    val validNoonLasses = abcFor(genre, noonLasses)
     validNoonLasses.fold(e => println("unexpected error in test data: " + e), s => s.upsert("irish"))  
-    val validSpeedThePlough = abcFor(speedThePlough)
+    val validSpeedThePlough = abcFor(genre, speedThePlough)
     validSpeedThePlough.fold(e => println("unexpected error in test data: " + e), s => s.upsert("irish"))  
     tuneModel.createIndex("irish")
   }

@@ -4,7 +4,7 @@ assemblySettings
 
 name  := "musicrest-2.10"
 
-version := "1.1.5"
+version := "1.1.6"
 
 jarName in assembly <<= (name, version) map { (n, v) => n + "-" + v + ".jar" }
 
@@ -32,7 +32,8 @@ libraryDependencies ++= Seq(
   "org.mongodb"         %%  "casbah"             % "2.6.2",
   "net.liftweb"         %%  "lift-json"          % "2.5",
   "javax.mail"          %   "mail"               % "1.4",
-  "org.specs2"          %%  "specs2"             % "1.14" % "test"
+  "org.specs2"          %%  "specs2"             % "1.14" % "test",
+  "io.argonaut"         %%   "argonaut"          % "6.0.4" % "test"
 )
 
 fork := true

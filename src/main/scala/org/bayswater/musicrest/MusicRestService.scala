@@ -260,8 +260,17 @@ trait MusicRestService extends HttpService with CORSDirectives {
         // get a tune (in abc represented in html format)         
         get {   
           respondWithMediaType(`text/html`) {
-            val tuneNotes = java.net.URLDecoder.decode(tuneEncoded, "UTF-8")
-            complete(Tune(genre, tuneNotes).asHtml )
+            val tuneName = java.net.URLDecoder.decode(tuneEncoded, "UTF-8")
+            complete(Tune(genre, tuneName).asHtml )
+          } 
+        } 
+      } ~     
+      path(Segment / "tune" / Segment / "json" ) { (genre, tuneEncoded) => 
+        // get a tune (in abc represented in json format)         
+        get {   
+          respondWithMediaType(`application/json`) {
+            val tuneName = java.net.URLDecoder.decode(tuneEncoded, "UTF-8")
+            complete(Tune(genre, tuneName).asJson )
           } 
         } 
       } ~     

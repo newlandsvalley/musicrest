@@ -28,6 +28,8 @@ import org.bayswater.musicrest.abc.Tune.AbcType
 import org.bayswater.musicrest.cache.Cache._
 import org.bayswater.musicrest.TestData._
 
+
+
 /* These tests exercise URLs which require content negotiation */
 class ContentNegotiationSpec extends RoutingSpec with MusicRestService {
   def actorRefFactory = system
@@ -206,10 +208,11 @@ class ContentNegotiationSpec extends RoutingSpec with MusicRestService {
   def insertTunes = {
    val dbName = "tunedbtest"
    val tuneModel = TuneModel()
-   tuneModel.delete("irish")
-   val validNoonLasses = abcFor(noonLasses)
+   val genre = "irish"
+   tuneModel.delete(genre)
+   val validNoonLasses = abcFor(genre, noonLasses)
    validNoonLasses.fold(e => println("unexpected error in test data: " + e), s => s.upsert("irish"))  
-   val validSpeedThePlough = abcFor(speedThePlough)
+   val validSpeedThePlough = abcFor(genre, speedThePlough)
    validSpeedThePlough.fold(e => println("unexpected error in test data: " + e), s => s.upsert("irish"))  
   }
   
@@ -217,6 +220,8 @@ class ContentNegotiationSpec extends RoutingSpec with MusicRestService {
     val cacheDir = new java.io.File("cache/test")
     clearCache(cacheDir, 0)
   }
+  
+  
 }
 
 

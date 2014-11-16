@@ -23,12 +23,14 @@ import spray.httpx.marshalling._
 import scalaz.Validation
 import scalaz.Scalaz._
 import org.bayswater.musicrest.MusicRestSettings
+import org.bayswater.musicrest.Util._
+
 
 
 class RhythmList(s: List[String]) {  
   
   def toJSON: String = {
-    val quoteds = s.map( x => "\"" + x + "\"")
+    val quoteds = s.map( x => "\"" + encodeJSON(x) + "\"")
     "{ " + "\"rhythm\"" + " :" + quoteds.mkString("[", ",", "]") + " }"
   }
   

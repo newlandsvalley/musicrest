@@ -20,7 +20,7 @@ import net.liftweb.json._
 import spray.http._
 import MediaTypes._
 import spray.httpx.marshalling._
-import org.bayswater.musicrest.Util
+import org.bayswater.musicrest.Util._
 
 import org.bayswater.musicrest.model.{UserModel, UserRef}
 
@@ -28,7 +28,7 @@ class UserList(i: Iterator[UserRef], page: Int, size: Int) {
   
   def toJSON: String = {
     val quotedi = i.map( userRef => {
-     "{ " +  Util.formatJSON("name", userRef.name) + ", " + Util.formatJSON("email", userRef.email) + "}\n"
+     "{ " +  formatJSON("name", userRef.name) + ", " + formatJSON("email", userRef.email) + "}\n"
     })  
     quotedi.mkString("{ \"user\": [", ",", "], " + pageInfoJSON + "  }") 
   }    

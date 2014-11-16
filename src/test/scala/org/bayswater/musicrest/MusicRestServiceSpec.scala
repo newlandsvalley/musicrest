@@ -24,10 +24,22 @@ import MediaTypes._
 import org.bayswater.musicrest.abc.Tune.AbcType
 import spray.http.HttpHeaders._
 import spray.routing.authentication._
-import scalaz.Validation
 import org.bayswater.musicrest.model.{TuneModel,User, UnregisteredUser}
 import org.bayswater.musicrest.TestData._
+import scalaz.Validation
+import scalaz.\/
+import argonaut._
+import Argonaut._
 
+
+// codecs for json parsing with Argonaut
+case class AbcMeta(title: String, rhythm: String, timeSignature: Option[String], Key: Option[String],
+                   origin: Option[String], transcriber: Option[String], tempo: Option[String])
+ 
+object AbcMeta {
+  implicit def AbcMetaCodecJson: CodecJson[AbcMeta] =
+    casecodec7(AbcMeta.apply, AbcMeta.unapply)("T", "R", "M", "K", "O", "Z", "Q")
+}
 
 /* These tests exercise URLs which on the whole do NOT require content negotiation */
 class MusicRestServiceSpec extends RoutingSpec with MusicRestService {
@@ -103,6 +115,30 @@ class MusicRestServiceSpec extends RoutingSpec with MusicRestService {
       }
     }   
     
+    "return application/json content when requested in the url for tunes of this type" in {
+      Get("/musicrest/genre/irish/tune/noon+lasses-reel/json") ~> musicRestRoute ~> check {
+        responseAs[String] must contain(""""T": "Noon Lasses"""")
+        responseAs[String] must contain(""""M": "4/4"""")
+        val jsonDisj = parseAbcJson(responseAs[String])
+        jsonDisj.fold (
+            e => failure(s"json decode failure: $e"),
+            abcMeta => abcMeta must_== AbcMeta("Noon Lasses", "reel", Some("4/4"), Some("Gmaj"), None, Some("John Watson 12/11/2014"), None)
+            )
+        mediaType === MediaTypes.`application/json`
+      }
+    }   
+    
+   "parse and decode json properly from json resources" in {
+      Get("/musicrest/genre/scandi/tune/schottis+fran+idre-schottis/json") ~> musicRestRoute ~> check {
+        val jsonDisj = parseAbcJson(responseAs[String])
+        jsonDisj.fold (
+            e => failure(s"json decode failure: $e"),
+            abcMeta => abcMeta must_== AbcMeta("Schottis fran Idre", "Schottis", Some("2/4"), Some("Ddor"), Some("Sweden"), None, Some("70"))
+            )
+        mediaType === MediaTypes.`application/json`
+      }
+    }       
+     
     "return text/vnd.abc content when requested in the url for tunes of this type" in {
       Get("/musicrest/genre/irish/tune/noon+lasses-reel/abc") ~> musicRestRoute ~> check {
         responseAs[String] must contain("T: Noon Lasses")
@@ -296,12 +332,32 @@ class MusicRestServiceSpec extends RoutingSpec with MusicRestService {
    val tuneModel = TuneModel()
    tuneModel.delete("irish")
    tuneModel.delete("scandi")
-   val validNoonLasses = abcFor(noonLasses)
+   val validNoonLasses = abcFor("irish", noonLasses)
    validNoonLasses.fold(e => println("unexpected error (noon lasses) in test data: " + e), s => s.upsert("irish"))  
-   val validVardet = abcFor(vardet)
+   val validVardet = abcFor("scandi", vardet)
    validVardet.fold(e => println("unexpected error (vardet) in test data: " + e), s => s.upsert("scandi"))  
+   val validIdreSchottis = abcFor("scandi", idreSchottis)
+   validIdreSchottis.fold(e => println("unexpected error (idre schottis) in test data: " + e), s => s.upsert("scandi"))  
   }  
-
+ 
+  /** parse a Json representation  of an ABC tune which is simply a set of name-value pairs 
+  *  return an optional AbcMeta object if the parse succeeds otherwise None
+  *  This uses Argonaut. 
+  */
+ /*
+  def parseAbcJson(json: String): Option[AbcMeta] = {
+    val jsonOpt = Parse.parseOption(json)
+    for {
+      json <- jsonOpt
+      abcMeta <- json.as[AbcMeta].toOption
+    } yield { abcMeta }
+  }
+  * 
+  */  
+ 
+  def parseAbcJson(json: String): String \/ AbcMeta = 
+    json.decodeEither[AbcMeta]
+  
 }
 
 

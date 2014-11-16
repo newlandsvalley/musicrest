@@ -133,7 +133,18 @@ object Util {
      }
    }
    
-   def formatJSON (name: String, value: String) : String = "\"" + name + "\"" + ": " + "\"" + value + "\" "
+   
+   // json requires the backslash to be escaped
+   def encodeJSON(s: String) = s.foldLeft(""){
+     (b, a) => a match {
+        case '\\' => b + "\\\\"
+        // I imagine quotes can only arrive already backslashed
+        // case '"' => b + "\\\""
+        case x => b+ x
+     }
+   }
+   
+   def formatJSON (name: String, value: String) : String = "\"" + encodeJSON(name) + "\"" + ": " + "\"" + encodeJSON(value) + "\" "
    
    /* we don't want special URI characters in tune names which form part of a URL */
    def isAcceptableURLCharacter(c: Char): Boolean =

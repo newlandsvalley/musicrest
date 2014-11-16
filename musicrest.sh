@@ -10,6 +10,6 @@
 # this changes to the parent directory.  why?
 cd $(dirname $0)/../
 
-exec java -Dconfig.file=conf/musicrest.conf -classpath target/scala-2.10/musicrest-2.10-1.1.4.jar org.bayswater.musicrest.Boot
+exec java -Dconfig.file=conf/musicrest.conf -classpath target/scala-2.10/musicrest-2.10-1.1.6.jar org.bayswater.musicrest.Boot
 
 exit $retcode

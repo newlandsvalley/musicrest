@@ -71,6 +71,7 @@ class Abc(val titles: List[String], rhythm: String, headers: scala.collection.Ma
     def timeSignature:Option[String] = headers.get("M")
     def author:Option[String] = headers.get("Z")
     def tuneIndex:Option[String] = headers.get("X") 
+    def source:Option[String] = headers.get("S") 
     def alternativeTitles = titles.tail
     
   
@@ -141,20 +142,22 @@ class Abc(val titles: List[String], rhythm: String, headers: scala.collection.Ma
       mb.result
     }
     
-   def toJSON: String = {
+    def toJSON: String = {        
+     
         val sb = new StringBuilder()
-        val encodedHeaders = for ( (key, value) <- headers ) yield ("     " + enQuote(key) + ": " + enQuote(value))
+        val encodedHeaders = for ( (key, value) <- headers ) yield ("     " + formatJSON(key, value))
         sb.append("{\n")
-        sb.append("\n     " + enQuote("T") + ": " + enQuote(name) + "\n")
+        sb.append("\n     " + formatJSON("T", name) + ",\n")
         // append the headers (explicitly typed as JSON attributes)
         sb.append(encodedHeaders.mkString(",\n"))
         sb.append(",")
-        sb.append("\n     " + enQuote("abc") + ": " + enQuote(abc) + "\n")
+        sb.append("\n     " + formatJSON("abc", abc) + "\n")
         sb.append("\n}\n")
         // println(sb.toString())
         sb.toString
-    }    
-   
+    }      
+    
+
     // not used at the moment - just done as a db update - but used in tests
     def addAlternativeTitle(title: String) : Validation[String, Abc] = {
       if (titles.contains(title)) {
@@ -375,6 +378,7 @@ object AbcSubmission {
       val rhythmExtractor = """^(R):(.*)""".r
       val tuneKeyExtractor = """^(K):(.*)""".r
       val indexExtractor = """^(X):(.*)""".r
+      val sourceExtractor = """^(S):(.*)""".r
       val headerExtractor = """^([a-zA-Z]{1}):(.*)""".r
       val sbDirectives = new StringBuilder()  
       val sbHeaders = new StringBuilder()  
@@ -424,6 +428,13 @@ object AbcSubmission {
             headers += (hname.trim() -> hvalue.trim() )
             abcCount += 1
             sbHeaders.append(cleanLine + "\n")
+            }
+          case sourceExtractor(hname, hvalue) => {
+            // don't include gratuitous self-references to musicrest for sources
+            if (! hvalue.contains("/musicrest/")) {
+              headers += (hname.trim() -> hvalue.trim() )
+              sbHeaders.append(cleanLine + "\n")
+              }
             }
           case headerExtractor(hname, hvalue) => {
             headers += (hname.trim() -> hvalue.trim() )

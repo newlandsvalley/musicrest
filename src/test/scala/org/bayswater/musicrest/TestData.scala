@@ -44,6 +44,7 @@ g2g2 g4 | g2fe dBGB | c2ec B2dB | A2A2 G4 :|"""
 T: Noon Lasses
 T: East Clare, The
 M: 4/4
+Z: John Watson 12/11/2014
 L: 1/8
 R: reel
 K: Gmaj
@@ -61,6 +62,7 @@ T:Fraher's Jig
 R:jig
 C: as played by John Wynne on "Pride of the West"
 Z:transcribed by moritz
+S:http://someServer/musicrest/genre/irish/frahers
 M:6/8
 K:Dmix
 |A3 GEA|DED ~G3|AEA GEA|~D3 DE/F/G|A2A GEA|DAF GAB|A2A GEA|~D3 D3|
@@ -120,13 +122,32 @@ L: 1/8
 d2 fd fg | (e2>d2)cB | A4 c2 | B2 G2 G2 | A4 :|"""
   
   
-  def abcFor(content: String, submitter: String): Validation[String, Abc] = {
+
+val idreSchottis = """X:8748
+T:Schottis fran Idre
+A:Dalarna
+C:e. Storbo-Jöns
+F:http://richardrobinson.tunebook.org.uk/tune/3056
+L:1/16
+M:2/4
+O:Sweden
+Q:70
+R:Schottis
+K:Ddor
+aage f2ed | ^c2A2 A4 | AB^cd e2ec | d^cdf a4 |\
+aage f2ed | ^c2A2 A4 | AB^cd efec | d2d2 d4 ::
+f2fg f2ed | e2a2 a2ge | f2fg f2ed | efe^c A4 |\
+f2fg f2ed | e2a2 a2ge | f2df e2A^c | d2d2 d4 ::
+d2d2 d^ced | ^c2A2 A2ag | f2ff f2gf | f2e^c A3A |\
+Add2 d^ced | ^c2A2 A2ag | f2df e2A^c | d2d2 d4 :|"""
+  
+  def abcFor(genre: String, content: String, submitter: String): Validation[String, Abc] = {
     val lines = Source.fromString(content).getLines
-    val abcSubmission = AbcSubmission(lines, "irish", submitter)
+    val abcSubmission = AbcSubmission(lines, genre, submitter)
     abcSubmission.validate        
   }
   
-  def abcFor(content: String): Validation[String, Abc] = abcFor(content, "administrator")
+  def abcFor(genre: String, content: String): Validation[String, Abc] = abcFor(genre, content, "administrator")
   
   
   def newUser1FormData =
@@ -187,9 +208,10 @@ K: Edor
   def insertCommentableTunes = {
     val dbName = "tunedbtest"
     val tuneModel = TuneModel()
-    tuneModel.delete("irish")
+    val genre = "irish"
+    tuneModel.delete(genre)
     for (i <- 0 to 15) {
-      val abc = abcFor(commentableTune(i))
+      val abc = abcFor(genre, commentableTune(i))
       abc.fold(e => println("unexpected error in test data: " + e), 
                s => s.upsert("irish"))
     }
