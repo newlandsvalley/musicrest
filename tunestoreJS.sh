@@ -17,7 +17,7 @@ fi
 
 dbname=$1
 
-java -Dconfig.file=conf/musicrest.conf -classpath target/scala-2.10/musicrest-2.10-1.1.5.jar org.bayswater.musicrest.tools.TuneStoreJS $dbname
+java -Dconfig.file=conf/musicrest.conf -classpath target/scala-2.10/musicrest-2.10-1.1.6.jar org.bayswater.musicrest.tools.TuneStoreJS $dbname
 
 
 exit $retcode
