@@ -21,3 +21,4 @@ DBbackup.sh
 DBrestore.sh
 remoteuserinsertLenovo.sh
 remoteuserinsertLinode.sh
+tradtunestore.js

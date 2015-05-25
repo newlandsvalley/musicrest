@@ -20,13 +20,13 @@ import org.bayswater.musicrest.model._
 import com.mongodb.casbah.Imports._
 import org.bayswater.musicrest.Util._
 
-/** generate java script for the trad tune store web application */
-object TuneStoreJS {
+/** generate java script for the trad tune store version 1.0.5 web application */
+object TuneStore105JS {
   
  def main(args: Array[String]): Unit = {   
  
    if (args.length < 1) {      
-      println("Usage: TuneStoreJS <db name>")
+      println("Usage: TuneStore105JS <db name>")
       System.exit(0)
    }      
     
@@ -43,7 +43,7 @@ object TuneStoreJS {
  var option;
 
  // dynamic selection drop-downs
- function rhythmChange(genre, includeAny) {
+ function rhythmChange(genre) {
    var rhythm_dropdown = document.getElementById("rhythm_dropdown");   
    // Set each option to null thus removing it
    while ( rhythm_dropdown.options.length ) rhythm_dropdown.options[0] = null;
@@ -58,14 +58,6 @@ object TuneStoreJS {
       arr = new Array("")     
     break; 
    }   
-
-   if (includeAny) {
-     arr = new Array("any").concat(arr0);
-   }
-   else {
-     arr = arr0
-   }
-
    for (var i=0;i<arr.length;i++) {
      option = new Option(arr[i],arr[i]);
      rhythm_dropdown.options[i] = option;
@@ -78,20 +70,10 @@ object TuneStoreJS {
     element.value = genre;
   }
 
-  function selectRhythm(rhythm) {    
-    var element = document.getElementById('rhythm_dropdown');
-    element.value = rhythm;
-  }
-
   function genreInit(genre) {
      selectGenre(genre)
      var genre_dropdown = document.getElementById("genre");   
-     rhythmChange(genre, true)
-  }
-
-  function genreAndRhythmInit(genre, rhythm) {
-     genreInit(genre)
-     selectRhythm(rhythm)
+     rhythmChange(genre)
   }
  """   
  }
@@ -104,7 +86,7 @@ object TuneStoreJS {
      sb append ("\n    case \"" + g + "\":\n" )
      val rhythms = tuneModel.getSupportedRhythmsFor(g)
      val quotedRhythms = rhythms.map( r => "\"" + r + "\"")
-     sb.append(quotedRhythms.mkString("      arr0 = new Array(",   ",",   ");\n"))
+     sb.append(quotedRhythms.mkString("      arr = new Array(\"any\",",   ",",   ");\n"))
      sb.append ("    break;\n")
    })
    sb.mkString
