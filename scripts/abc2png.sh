@@ -42,19 +42,19 @@ then
   exit 1
 fi  
 
-# transcode from .abc to .ps
-abcm2ps $abcdir/$3.abc -O $workdir/$3.ps
+# transcode from .abc to .eps (generates a 001 extension to the name)
+abcm2ps -E $abcdir/$3.abc -O $workdir/$3.eps
 retcode=$?
 echo "abc return: " $retcode
 
-# transcode from .ps to .png
+# transcode from .eps to .png
 if [ $retcode -eq 0 ]; then
   echo "attempting to transcode ps to png"
-  convert -trim $workdir/$3.ps $pdfdir/$3.png
+  convert -trim $workdir/$3001.eps $pdfdir/$3.png
   retcode=$?
 fi
 
-# remove the intermediate .ps file
-rm -f $workdir/$3.ps
+# remove the intermediate .eps file
+rm -f $workdir/$3001.eps
 
 exit $retcode
