@@ -44,7 +44,7 @@ URL path segments in italics represent fixed text; those in bold type are variab
 
 A user must be logged in before he can submit or test-transcode a tune.  Only the original submitter or the *administrator* user is allowed to delete tunes. There is also a fairly conventional set of URLs for user maintenance.
 
-Version 1.1.4 introduces the possibility of attaching comments to a tune:
+Version 1.1.4 introduced the possibility of attaching comments to a tune:
 
 *  GET / _musicrest_ / _genre_ / **agenre** / _tune_ / **atune** / _comments_ - get the comments attached to a tune
 
@@ -83,7 +83,7 @@ Most lists may be obtained in xml, html or json format.
 
 Linux is required for its transcoding services. MusicRest has been tested under Ubuntu 12.04. The following must be installed or present before the service can be run:
 
-* a JVM (Java 1.6 or better)
+* a JVM (Java 1.8 or better)
 * [MongoDB](http://www.mongodb.org/)  (2.0.4 or better)
 * [AbcMidi](http://abc.sourceforge.net/abcMIDI/) (3.10 or better)
 * [Abcm2ps](http://abcplus.sourceforge.net/#abcm2ps) (5.9.25 or better)
@@ -140,19 +140,23 @@ There is no web front end included within this project.  However [tradtunedb](ht
 
 #### _Source Code_
 
-Code is written in scala and built with sbt.  
+Code is written in scala 2.11.7 and built with sbt.   
     
-    "io.spray"            %   "spray-can"          % "1.1.0",
-    "io.spray"            %   "spray-routing"      % "1.1.0",
-    "io.spray"            %   "spray-caching"      % "1.1.0",
-    "io.spray"            %   "spray-testkit"      % "1.1.0",
-    "com.typesafe.akka"   %%  "akka-actor"         % "2.1.4",
-    "com.typesafe.akka"   %%  "akka-testkit"       % "2.1.4",
-    "org.scalaz"          %   "scalaz-core_2.10"   % "7.0.0",
-    "org.mongodb"         %%  "casbah"             % "2.6.2",
-    "net.liftweb"         %%  "lift-json"          % "2.5",
-    "javax.mail"          %   "mail"               % "1.4",
-    "org.specs2"          %%  "specs2"             % "1.14" % "test"
+```
+   "io.spray"            %   "spray-can_2.11"     % "1.3.4",
+   "io.spray"            %   "spray-routing_2.11" % "1.3.4",
+   "io.spray"            %   "spray-caching_2.11" % "1.3.4",
+   "io.spray"            %   "spray-testkit_2.11" % "1.3.4",
+   "com.typesafe.akka"   %%  "akka-actor"         % "2.4.11",
+   "com.typesafe.akka"   %%  "akka-testkit"       % "2.4.11",
+   "org.scalaz"          %%  "scalaz-core"        % "7.1.6",
+   "org.scalaz.stream"   %%  "scalaz-stream"      % "0.8",
+   "org.mongodb"         %%  "casbah"             % "3.1.1",
+   "net.liftweb"         %   "lift-webkit_2.11"   % "3.0-M8",
+   "javax.mail"          %   "mail"               % "1.4.7",
+   "org.specs2"          %%  "specs2"             % "2.5-scalaz-7.1.6" % "test",
+   "io.argonaut"         %%  "argonaut"           % "6.1" % "test"
+```
 
 Spray uses logback for logging, but there is an unfortunate dependency on slf4j brought in by Casbah.
 
@@ -181,5 +185,5 @@ Alternatively, you can build and then run a single jar assembly using:
 ### _Other Links_
 
 *  [Blog](http://myelucubrations.blogspot.co.uk/)
-*  [Spray](http://spray.io/documentation/1.2-M8/)
+*  [Spray](http://spray.io/)
 
