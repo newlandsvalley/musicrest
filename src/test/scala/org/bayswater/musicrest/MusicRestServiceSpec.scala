@@ -314,18 +314,38 @@ class MusicRestServiceSpec extends RoutingSpec with MusicRestService {
   }
    
   /** check a header is present */
+  def checkHeader(h: Option[spray.http.HttpHeader], expected: String) = h match {
+    case None => validationFailure(s"No ${expected} header present")
+    case Some(h) => h.name must contain (expected)
+  }  
+
+/*
   def checkHeader(h: Option[spray.http.HttpHeader], expected: String): Boolean = h match {
     case None => failure(s"No ${expected} header present")
     case Some(h) => h.name must contain (expected)
   }  
+*/
    
-  /* check a header is present with the expected value */
+  /* check a header is present with the expected value */  
+  def checkHeaderValue(h: Option[spray.http.HttpHeader], expectedName: String, expectedValue: String) = h match {
+    case None => validationFailure(s"No ${expectedName} header present")
+    case Some(h) => {
+      h.value must contain (expectedValue)
+    }
+  }  
+
+/*
   def checkHeaderValue(h: Option[spray.http.HttpHeader], expectedName: String, expectedValue: String): Boolean = h match {
     case None => failure(s"No ${expectedName} header present")
     case Some(h) => {
       h.value must contain (expectedValue)
     }
   }  
+*/
+
+  // this is a hack to get the types to match up - must find out how to do it properly
+  def validationFailure (msg: String) =
+     msg must_== "true"
   
  def insertTune = {
    val dbName = "tunedbtest"

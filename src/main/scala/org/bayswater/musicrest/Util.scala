@@ -126,10 +126,10 @@ object Util {
               println("dimensions: " + ans)
               ans.success
             }
-            case _ => "no dimensions".fail
+            case _ => "no dimensions".failure[(String, String)]
          }
        }
-       case _ => err.toString.fail
+       case _ => err.toString.failure[(String, String)]
      }
    }
    

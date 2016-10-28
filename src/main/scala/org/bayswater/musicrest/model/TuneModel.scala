@@ -96,10 +96,9 @@ object TuneModel {
    *  experiment with just setting the pool size for the moment. 
    */
   private val musicRestSettings = MusicRestSettings
-  private val mongoOptions = MongoOptions(true)
-  mongoOptions.connectionsPerHost = musicRestSettings.dbPoolSize
-  private val mongoConnection = MongoConnection(new ServerAddress(musicRestSettings.dbHost,  musicRestSettings.dbPort), mongoOptions)
-  private val casbahTuneModel = new TuneModelCasbahImpl(mongoConnection, musicRestSettings.dbName)
+  private val mongoOptions = MongoClientOptions ( connectionsPerHost = musicRestSettings.dbPoolSize )
+  private val mongoClient = MongoClient(new ServerAddress(musicRestSettings.dbHost,  musicRestSettings.dbPort), mongoOptions)
+  private val casbahTuneModel = new TuneModelCasbahImpl(mongoClient, musicRestSettings.dbName)
   // private val port = 27017
   // private val host = "localhost"
   def apply(): TuneModel = casbahTuneModel

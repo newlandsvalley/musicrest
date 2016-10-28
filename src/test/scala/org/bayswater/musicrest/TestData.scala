@@ -224,7 +224,7 @@ K: Edor
       (s"delayed for ${tics} ms").success
     }
     catch {
-      case t: Throwable  =>  "delay interrupted".fail
+      case t: Throwable  =>  "delay interrupted".failure[String]
     }
     finally {
     }              

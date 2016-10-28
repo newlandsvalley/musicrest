@@ -69,7 +69,7 @@ object GenreList {
     if (SupportedGenres.isGenre(genre))
       genre.success
     else
-      ("Genre: " + genre + " is not currently supported").fail  
+      ("Genre: " + genre + " is not currently supported").failure[String]  
  
 
    implicit val GenreListMarshaller = {  

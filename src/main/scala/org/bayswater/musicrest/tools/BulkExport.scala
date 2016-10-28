@@ -32,7 +32,7 @@ class BulkExport (val abcDir: String, val genre: String, dbName: String) {
     val pageSize = 20
     var nextPage = 1
     var exported = 0
-    val tuneModel = new TuneModelCasbahImpl(MongoConnection(), dbName)
+    val tuneModel = new TuneModelCasbahImpl(MongoClient(), dbName)
     def count = tuneModel.count(genre, Map.empty[String, String]) : Long
     while (exported < count ) {
        val tunes: Iterator[scala.collection.Map[String, String]] = tuneModel.getTunes(genre, "alphabetic", nextPage, pageSize)
@@ -43,7 +43,7 @@ class BulkExport (val abcDir: String, val genre: String, dbName: String) {
    }
   
   def writeTunes(tunes: Iterator[scala.collection.Map[String, String]], abcDir: String, genre: String, dbName: String) {    
-    val tuneModel = new TuneModelCasbahImpl(MongoConnection(), dbName)
+    val tuneModel = new TuneModelCasbahImpl(MongoClient(), dbName)
     tunes.foreach(t => {
       val tuneOpt =  for {
         id <- t.get(TuneModel.tuneKey)

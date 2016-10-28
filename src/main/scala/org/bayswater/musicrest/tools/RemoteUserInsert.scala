@@ -56,7 +56,7 @@ object RemoteUserInsert {
       case Failure(error) => println(s"failed insertion: $error")
     }
     
-    future.onComplete { _ => system.shutdown() }
+    future.onComplete { _ => system.terminate() }
   }
   
  

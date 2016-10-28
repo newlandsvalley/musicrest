@@ -116,7 +116,7 @@ class Abc(val titles: List[String], rhythm: String, headers: scala.collection.Ma
           case "html" =>  toHTML.success
           case "plain" =>  abcWithSHeader.success
           case "vnd.abc" =>  abcWithSHeader.success
-          case _ => ("Unsupported media type: " + formatExtension).fail
+          case _ => ("Unsupported media type: " + formatExtension).failure[String]
         }
     }  
     
@@ -162,10 +162,10 @@ class Abc(val titles: List[String], rhythm: String, headers: scala.collection.Ma
     def addAlternativeTitle(title: String) : Validation[String, Abc] = {
       if (titles.contains(title)) {
         // println("title: " + title + " already exists")
-        ("title: " + title + " already exists").fail
+        ("title: " + title + " already exists").failure[Abc]
       }
       else if (title.contains('\\')) {
-          (s"Please use Unicode for all titles and don't use backslashes - you have submitted $title").fail
+          (s"Please use Unicode for all titles and don't use backslashes - you have submitted $title").failure[Abc]
       }
       else {
         val newAbcHeaders = abcHeaders + ("T: " + title + "\n")
@@ -192,10 +192,10 @@ class Abc(val titles: List[String], rhythm: String, headers: scala.collection.Ma
      */
     def insertIfNew(genre: String): Validation[String, TuneRef] = 
       if (TuneModel().exists(genre, id)) {        
-        ("Tune: " + id + " already exists").fail
+        ("Tune: " + id + " already exists").failure[TuneRef]
       } 
       else {
-        TuneModel().insert(genre, this) flatMap ( t => (TuneRef(name, tuneType, id)).success)
+        TuneModel().insert(genre, this) map ( t => (TuneRef(name, tuneType, id)))
       }    
     
     /** upsert:
@@ -208,7 +208,7 @@ class Abc(val titles: List[String], rhythm: String, headers: scala.collection.Ma
       val optOldRef = TuneModel().getTuneRef(genre, id)
       
       optOldRef match {
-        case None => TuneModel().insert(genre, this) flatMap ( t => (TuneRef(name, tuneType, id)).success)
+        case None => TuneModel().insert(genre, this) map ( t => (TuneRef(name, tuneType, id)))
         case Some(originalId) => {
           val oldSubmitter = TuneModel().getSubmitter(genre, id)
           
@@ -221,14 +221,14 @@ class Abc(val titles: List[String], rhythm: String, headers: scala.collection.Ma
               // delete old setting of the tune from the file system cache
               val dir = new File(MusicRestSettings.transcodeCacheDir)
               clearTuneFromCache(dir, id)
-              TuneModel().replace(originalId, genre, this) flatMap ( t => (TuneRef(name, tuneType, id)).success)
+              TuneModel().replace(originalId, genre, this) map ( t => (TuneRef(name, tuneType, id)))
             }
             else {
-              (s"Tune: ${id} already exists - original submitter: ${oldSubmitterName}").fail
+              (s"Tune: ${id} already exists - original submitter: ${oldSubmitterName}").failure[TuneRef]
             }
           }
           else {
-            (s"internal error - could not find submitter of tune ${id}").fail
+            (s"internal error - could not find submitter of tune ${id}").failure[TuneRef]
           }
         }
       }
@@ -260,18 +260,19 @@ object Abc {
 
     // build a (presumed valid) tune from the BSON-provided map
     def validTune(requestedTune: Tune, optMap: Option[AbcMongo]): Validation[String, Abc] = optMap match {
-      case None => (s"Not Found: $requestedTune").fail
+      case None => (s"Not Found: $requestedTune").failure[Abc]
       case Some(m) => apply(m).success
     }    
     
     // add an alternative title to the tune
     def addAlternativeTitle(genre: String, id: String, title: String) : Validation[String, TuneRef] = {
       val response = TuneModel().addAlternativeTitle(genre, id, title) 
-      response.flatMap(t => 
+      response.map(t => 
          { val tuneId = TuneId(id)
-           TuneRef(tuneId.name, tuneId.rhythm, id).success
+           TuneRef(tuneId.name, tuneId.rhythm, id)
          })
     }
+
   
 }
 
@@ -300,72 +301,78 @@ class AbcSubmission (genre: String,
     def tuneKey:Option[String] = headers.get("K")
     def rhythm:Option[String] = headers.get("R")
     
-    private def checkIndex() : Validation[String, AbcSubmission] = tuneIndex match {
-      case None => this.success
-      case Some(i) => if (i == "1") this.success else ("Invalid index: " + i).fail
+    private def checkIndex() : \/[String, AbcSubmission] = tuneIndex match {
+      case None => "no tune index".left
+      case Some(i) => if (i == "1") this.right else ("Invalid index: " + i).left
     } 
-    
-    private def checkKeySignature() : Validation[String, AbcSubmission] = tuneKey match {
-      case None => "No key Signature present in abc".fail
+
+    private def checkKeySignature() : \/[String, AbcSubmission] = tuneKey match {
+
+      case None => "No key Signature present in abc".left
+
       case Some(k) => {
         if (4 > k.length)  {
-          ("Unrecognized key signature: " + k).fail
+          ("Unrecognized key signature: " + k).left
         }
         else {
           val key = k.head.toUpper
           val mode = k.slice(1,4).toLowerCase
-          if (!List('A', 'B', 'C', 'D', 'E', 'F', 'G').contains(key)) {            
-             ("Unrecognized key signature: " + k).fail
+          if (!List('A', 'B', 'C', 'D', 'E', 'F', 'G').contains(key)) {
+             ("Unrecognized key signature: " + k).left
           }
-          else if (!List("dor", "maj", "min", "mix", "phr").contains(mode)) {            
-             ("Unrecognized key signature: " + k).fail
+          else if (!List("dor", "maj", "min", "mix", "phr").contains(mode)) {
+             ("Unrecognized key signature: " + k).left
           }
           else
-            this.success
+            this.right
         }
       }
     }
+    
 
-
-    private def checkCount() : Validation[String, AbcSubmission] = abcCount match {
-      case 0 => "No tunes present in abc".fail
-      case c => if (c == 1) this.success else ("More than one tune supplied: " + c).fail
+    private def checkCount() : \/[String, AbcSubmission] = abcCount match {
+      case 0 => "No tunes present in abc".left
+      case c => if (c == 1) this.right else ("More than one tune supplied: " + c).left
     }
  
-    private def checkTitles() : Validation[String, List[String]] = 
+
+    private def checkTitles() : \/[String, List[String]] = 
       if (titles.isEmpty) {
-        "No title (T header) present in abc".fail
+        "No title (T header) present in abc".left
       }
       else {
         // check we're not using the old-fashioned ABC escaped mechanisms in the main title instead of Unicode
         val mainTitle = titles.head
         // println(s"main title is $mainTitle")
         if (mainTitle.contains('\\')) {
-          (s"Please use Unicode for all titles and don't use backslashes - you have submitted $mainTitle").fail
+          (s"Please use Unicode for all titles and don't use backslashes - you have submitted $mainTitle").left
         }
         else {
-          titles.toList.success
+          titles.toList.right
         }          
       }
-    
-    
-    
-    private def checkRhythm() : Validation[String, String] = rhythm match {
-      case None => "No rhythm (R header) present in abc".fail
+
+   
+    private def checkRhythm() : \/[String, String] = rhythm match {
+      case None => "No rhythm (R header) present in abc".left
       case Some(r) => {
           if (SupportedGenres.isRhythm(genre, r.toLowerCase()))
-            r.success
+            r.right
           else 
-            (r + " is not a recognized rhythm for the " + genre + " genre").fail
+            (r + " is not a recognized rhythm for the " + genre + " genre").left
       }
     }        
-      
-    def validate() : Validation[String, Abc] = for {
-       t <- checkTitles
-       r <- checkRhythm
-       _ <- checkKeySignature
-       _ <- checkCount
-    } yield (Abc(t, r, headers, abcDirectives, abcHeaders, abcBody, genre))
+
+    def validate() : Validation[String, Abc] = 
+      (for 
+        {
+         t <- checkTitles
+         r <- checkRhythm
+         _ <- checkKeySignature
+         _ <- checkCount
+        } yield (Abc(t, r, headers, abcDirectives, abcHeaders, abcBody, genre))
+      ).validation
+
 }
 
 

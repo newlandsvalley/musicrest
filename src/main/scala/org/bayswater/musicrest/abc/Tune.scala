@@ -18,6 +18,7 @@ package org.bayswater.musicrest.abc
 
 import net.liftweb.json._
 import scalaz.Validation
+import scalaz.{ \/, -\/, \/- }
 import scalaz.syntax.validation._
 import spray.http._
 import spray.httpx.marshalling._
@@ -161,7 +162,7 @@ object Tune {
        val binaryImage = BinaryImage(mediaType, bis)
        binaryImage.success
        }
-    else ("Temporary image for " + tune.name + " not found at path " + filePath).fail
+    else ("Temporary image for " + tune.name + " not found at path " + filePath).failure[BinaryImage]
     content 
   } 
 
@@ -188,11 +189,12 @@ object Tune {
     }
     else {
       val validAbc: Validation[String,Abc] = Abc.validTune(tune, tuneOpt) 
-      val content:Validation[String, File] = for {
-        abc <- validAbc
-        f <- abc.toFile(`audio/wav`, instrument, transpose, tempo)
+      (for 
+        {
+         abc <- validAbc.disjunction
+         f <- abc.toFile(`audio/wav`, instrument, transpose, tempo).disjunction
         } yield f 
-      content   
+      ).validation
     }
   }  
 
@@ -209,16 +211,24 @@ object Tune {
     toValidImage(Abc.validTune(requestedTune, tuneOpt), requestedContentType)
   }
 
-  def toValidString(validAbc: Validation[String, Abc], requestedContentType: ContentType): Validation[String, String] = for {
-    abc <- validAbc
-    p <- abc.toStr(requestedContentType.mediaType)
-  } yield p
+
+  def toValidString(validAbc: Validation[String, Abc], requestedContentType: ContentType): Validation[String, String] = 
+    (for 
+      {
+        abc <- validAbc.disjunction
+        p <- abc.toStr(requestedContentType.mediaType).disjunction
+      } yield p
+    ).validation
 
 
-  def toValidImage(validAbc: Validation[String, Abc], requestedContentType: ContentType): Validation[String, BinaryImage] = for {
-    abc <- validAbc
-    p <- abc.to(requestedContentType.mediaType)
-  } yield p
+  def toValidImage(validAbc: Validation[String, Abc], requestedContentType: ContentType): Validation[String, BinaryImage] = 
+    (for 
+      {
+        abc <- validAbc.disjunction
+        p <- abc.to(requestedContentType.mediaType).disjunction
+      } yield p
+    ).validation
+
   
   def exists(requestedTune: Tune): Boolean = {
     // try to get the requested tune from the database

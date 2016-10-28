@@ -26,7 +26,7 @@ fi
 dbname=$2
 genre=$3
 
-java -classpath target/scala-2.10/musicrest-2.10-1.1.6.jar org.bayswater.musicrest.tools.BulkExport $abcdir $dbname $genre
+java -Dconfig.file=conf/musicrest.conf -classpath target/scala-2.11/musicrest-2.11-assembly-1.1.7.jar org.bayswater.musicrest.tools.BulkExport $abcdir $dbname $genre
 
 echo "abc return: " $retcode
 

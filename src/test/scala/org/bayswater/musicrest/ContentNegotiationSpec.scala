@@ -199,11 +199,13 @@ class ContentNegotiationSpec extends RoutingSpec with MusicRestService {
   }
   
   def checkPaginationHeader(h: Option[spray.http.HttpHeader]): Boolean = h match {
-    case None => failure("No pagination header")
+    case None => validationFailure("No pagination header")
     case Some(h) => h.value must contain ("1 of 1")
   }  
 
-  
+  // this is a hack to get the types to match up - must find out how to do it properly
+  def validationFailure (msg: String) =
+     msg must_== "true"  
 
   def insertTunes = {
    val dbName = "tunedbtest"

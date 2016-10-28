@@ -92,7 +92,7 @@ object Email {
        ("User: " + user.name + " notified").success
     }
     catch {
-      case e:Exception => ("problem sending registration email for user: " + user.name + " : " + e.getMessage).fail
+      case e:Exception => ("problem sending registration email for user: " + user.name + " : " + e.getMessage).failure[String]
     }
   }
   
@@ -111,7 +111,7 @@ object Email {
        ("User: " + userRef.name + " password reminder").success
     }
     catch {
-      case e:Exception => ("problem sending registration email for user: " + userRef.name + " : " + e.getMessage).fail
+      case e:Exception => ("problem sending registration email for user: " + userRef.name + " : " + e.getMessage).failure[String]
     }   
   }
   

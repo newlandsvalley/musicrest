@@ -48,10 +48,9 @@ trait UserModel {
 object UserModel {  
  
   private val musicRestSettings = MusicRestSettings
-  private val mongoOptions = MongoOptions(true)
-  mongoOptions.connectionsPerHost = musicRestSettings.dbPoolSize
-  private val mongoConnection = MongoConnection(new ServerAddress(musicRestSettings.dbHost,  musicRestSettings.dbPort), mongoOptions)
-  private val casbahUserModel = new UserModelCasbahImpl(mongoConnection, musicRestSettings.dbName)
+  private val mongoOptions = MongoClientOptions ( connectionsPerHost = musicRestSettings.dbPoolSize )
+  private val mongoClient = MongoClient(new ServerAddress(musicRestSettings.dbHost,  musicRestSettings.dbPort), mongoOptions)
+  private val casbahUserModel = new UserModelCasbahImpl(mongoClient, musicRestSettings.dbName)
   // private val port = 27017
   // private val host = "localhost"
   def apply(): UserModel = casbahUserModel

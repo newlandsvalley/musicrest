@@ -17,22 +17,25 @@
 package org.bayswater.musicrest.model
 
 import spray.util.LoggingContext  
-import com.mongodb.casbah.Imports._
-import com.mongodb.casbah.MongoDB
+import com.mongodb.casbah.query.Imports._
+import com.mongodb.casbah._
+import com.mongodb.casbah.WriteConcern.Safe
+import com.mongodb.DBObject
 import scalaz.Validation
 import scalaz.syntax.validation._
 import scala.collection.JavaConversions._
 import org.bayswater.musicrest.abc.{Abc, AbcMongo, TuneRef}
 import org.bayswater.musicrest.abc.SupportedGenres
 
-class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: String) extends TuneModel with MongoTransaction {  
+class TuneModelCasbahImpl(val mongoClient: MongoClient, val dbname: String) extends TuneModel with MongoTransaction {  
   
   val log = implicitly[LoggingContext]
-  val mongoDB = MongoDB(mongoConnection, dbname) 
+  val mongoDB = mongoClient(dbname) 
   
    
+ 
   // set the write concern to Safe
-  val writeConcern:WriteConcern = {
+  val writeConcern = {
     mongoDB.setWriteConcern(WriteConcern.Safe)
     mongoDB.getWriteConcern
   }
@@ -47,7 +50,7 @@ class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: Stri
   }
  
   def insert(genre: String, abc:Abc): Validation[String, String] = withMongoPseudoTransction (mongoDB) {
-    val mongoCollection = mongoConnection(dbname)(genre)
+    val mongoCollection = mongoClient(dbname)(genre)
     val builder = MongoDBObject.newBuilder[String, String]
     builder += "T" -> abc.toAbcMongo.mongoTitles
     builder ++= abc.toAbcMongo.kvs    
@@ -58,7 +61,7 @@ class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: Stri
   
   /** replace an existing tune (i.e. one with an existing tune _id) */
   def replace(id: ObjectId, genre: String, abc:Abc): Validation[String, String] = withMongoPseudoTransction (mongoDB) {
-    val mongoCollection = mongoConnection(dbname)(genre)
+    val mongoCollection = mongoClient(dbname)(genre)
     val builder = MongoDBObject.newBuilder[String, String]
     builder += "_id" -> id
     builder += "T" -> abc.toAbcMongo.mongoTitles
@@ -69,7 +72,7 @@ class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: Stri
   } 
   
   def exists(genre: String, id: String) : Boolean = {
-    val mongoCollection = mongoConnection(dbname)(genre)
+    val mongoCollection = mongoClient(dbname)(genre)
     val q = MongoDBObject(TuneModel.tuneKey -> id) 
     // val opt = mongoCollection.findOneByID(id)
     val opt = mongoCollection.findOne(q)
@@ -77,20 +80,20 @@ class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: Stri
   }   
   
   def delete(genre: String, id: String) : Validation[String, String] = withMongoPseudoTransction (mongoDB) {
-    val mongoCollection = mongoConnection(dbname)(genre)
+    val mongoCollection = mongoClient(dbname)(genre)
     val result = mongoCollection.remove(MongoDBObject(TuneModel.tuneKey -> id))
     "Tune " + id + " removed from " + genre    
   }   
 
   def delete(genre: String) : Validation[String, String] = withMongoPseudoTransction (mongoDB) {
-    val mongoCollection = mongoConnection(dbname)(genre)
+    val mongoCollection = mongoClient(dbname)(genre)
     val result = mongoCollection.remove(MongoDBObject.empty)
     s"all tunes removed from $genre"
   }   
   
    
  def getSupportedGenres() : List[String] = {
-    val mongoCollection = mongoConnection(dbname)("genre")
+    val mongoCollection = mongoClient(dbname)("genre")
     val q  = MongoDBObject.empty
     val fields = MongoDBObject("_id" -> 1)    
        
@@ -103,7 +106,7 @@ class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: Stri
   
 
   def getSupportedRhythmsFor(genre: String): List[String] = {
-    val mongoCollection = mongoConnection(dbname)("genre")
+    val mongoCollection = mongoClient(dbname)("genre")
     val opt:Option[com.mongodb.DBObject] = mongoCollection.findOneByID(genre)
     opt match {
       case None => {
@@ -135,7 +138,7 @@ class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: Stri
     getAttribute(genre, id, "submitter")    
     
   private def getAttribute(genre: String, id: String, attribute: String): Option[String] = {
-    val mongoCollection = mongoConnection(dbname)(genre)
+    val mongoCollection = mongoClient(dbname)(genre)
     val q = MongoDBObject(TuneModel.tuneKey -> id) 
     val opt:Option[com.mongodb.DBObject] = mongoCollection.findOne(q)
     // val opt:Option[com.mongodb.DBObject] = mongoCollection.findOneByID(id)
@@ -149,7 +152,7 @@ class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: Stri
   }  
   
   def getTune(genre: String, tuneid: String): Option[AbcMongo] = {
-    val mongoCollection = mongoConnection(dbname)(genre)
+    val mongoCollection = mongoClient(dbname)(genre)
     // val opt:Option[com.mongodb.DBObject] = mongoCollection.findOneByID(tuneid)
     val q = MongoDBObject(TuneModel.tuneKey -> tuneid) 
     val opt:Option[com.mongodb.DBObject] = mongoCollection.findOne(q)
@@ -158,7 +161,7 @@ class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: Stri
   
   /** get the tune reference (i.e. the _id GUID) */
   def getTuneRef(genre: String, id: String): Option[ObjectId] = {    
-    val mongoCollection = mongoConnection(dbname)(genre)
+    val mongoCollection = mongoClient(dbname)(genre)
     val q = MongoDBObject(TuneModel.tuneKey -> id) 
     val opt:Option[com.mongodb.DBObject] = mongoCollection.findOne(q)
     opt.flatMap(o => o._id)
@@ -171,7 +174,7 @@ class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: Stri
    *  
    */
   def getTuneByGUID(genre: String, guid: String): Option[AbcMongo] = {
-    val mongoCollection = mongoConnection(dbname)(genre)
+    val mongoCollection = mongoClient(dbname)(genre)
     val opt:Option[com.mongodb.DBObject] = mongoCollection.findOneByID(guid)
     tuneObjectToAbcMongo(opt, genre)
   }  
@@ -197,17 +200,17 @@ class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: Stri
   def addAlternativeTitle(genre: String, id: String, title: String) : Validation[String, String] = {
     val tuneOption = TuneModel().getTune(genre, id)
     if (title.contains('\\')) {
-          (s"Please use Unicode for all titles and don't use backslashes - you have submitted $title").fail
+          (s"Please use Unicode for all titles and don't use backslashes - you have submitted $title").failure[String]
     }
     else if (!tuneOption.isDefined) {
-      ("tune " + id + " does not exist").fail
+      ("tune " + id + " does not exist").failure[String]
     }
     else {  
       // update the T headers within the ABC
       val abcHeaders:String = TuneModel().getAbcHeaders(genre, id).getOrElse("")
       val newAbcHeaders = abcHeaders + ("T: " + title + "\n")
       // update the database
-      val mongoCollection = mongoConnection(dbname)(genre)
+      val mongoCollection = mongoClient(dbname)(genre)
       val addTitleToSet = $addToSet("T" -> title) 
       val replaceHeaders = $set("abcHeaders" -> newAbcHeaders) 
       val q = MongoDBObject(TuneModel.tuneKey -> id)
@@ -229,7 +232,7 @@ class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: Stri
    * 
    */
   def search(genre: String, params: Map[String, String], sort: String, page: Int, size: Int):  Iterator[scala.collection.Map[String, String]] = {
-    val mongoCollection = mongoConnection(dbname)(genre)
+    val mongoCollection = mongoClient(dbname)(genre)
     val q = MongoDBObject.newBuilder
     /* remove the paging and sorting params to leave just the search params */
     params.filterKeys(removePagingAndSortingParam).foreach(p => q+= p._1 -> toRegex(p._2, p._1)  ) 
@@ -261,7 +264,7 @@ class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: Stri
   
   
   def count(genre: String, params: Map[String, String]) : Long  = {
-    val mongoCollection = mongoConnection(dbname)(genre)
+    val mongoCollection = mongoClient(dbname)(genre)
     val q = MongoDBObject.newBuilder
     /* remove the paging and sorting params to leave just the search params */
     params.filterKeys(removePagingAndSortingParam).foreach(p => q+= p._1 -> toRegex(p._2, p._1)  ) 
@@ -272,8 +275,9 @@ class TuneModelCasbahImpl(val mongoConnection: MongoConnection, val dbname: Stri
   def createIndex(genre: String) = {
      // don't make one if we're using the default _id key - Mongo does this automatically
      if ("_id" != TuneModel.tuneKey) {
-       val mongoCollection = mongoConnection(dbname)(genre)
-       mongoCollection.ensureIndex( DBObject(TuneModel.tuneKey -> 1), DBObject("unique" -> true) )
+       val mongoCollection = mongoClient(dbname)(genre)
+       /* mongoCollection.ensureIndex( DBObject(TuneModel.tuneKey -> 1), DBObject("unique" -> true) ) */
+       mongoCollection.createIndex( MongoDBObject(TuneModel.tuneKey -> 1), "tuneKey", true)
        log.info(s"unique index ${TuneModel.tuneKey} created on ${genre}")
      }
   }

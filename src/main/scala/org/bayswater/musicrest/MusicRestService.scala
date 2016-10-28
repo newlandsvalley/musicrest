@@ -32,6 +32,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import scalaz.Validation
 import scalaz.syntax.validation._
+import scalaz.{ \/, -\/, \/- }
 
 import org.bayswater.musicrest.abc._
 import org.bayswater.musicrest.abc.Tune._
@@ -153,14 +154,16 @@ trait MusicRestService extends HttpService with CORSDirectives {
               complete {
                 val abcSubmission = AbcSubmission(post.notes.lines, genre, user.username)
                 val validAbc:Validation[String, Abc] = abcSubmission.validate
-                val response:Validation[String, TuneRef] = for {
-                  g <- GenreList.validate(genre)
-                  abc <- validAbc 
-                  // we will try to transcode immediately to png which might cause further errors
-                  t <- abc.to(`image/png`)
-                  success <- abc.upsert(genre)
-                } yield {success}
-                response               
+                // response:\/[String, TuneRef] = 
+                val response = 
+                  for {
+                    g <- GenreList.validate(genre).disjunction
+                    abc <- validAbc.disjunction
+                    // we will try to transcode immediately to png which might cause further errors
+                    t <- abc.to(`image/png`).disjunction
+                    success <- abc.upsert(genre).disjunction
+                  } yield success
+                response.validation              
               }
             }
           }
@@ -366,14 +369,16 @@ trait MusicRestService extends HttpService with CORSDirectives {
               complete {
                 val abcSubmission = AbcSubmission(post.notes.lines, genre, user.username)
                 val validAbc:Validation[String, Abc] = abcSubmission.validate
-                val response:Validation[String, TuneRef] = for {
-                   g <- GenreList.validate(genre)
-                   abc <- validAbc 
-                   // we will try to transcode immediately to png which might cause further errors
-                   t <- abc.createTemporaryImageFile
-                   success <- abc.validTuneRef(genre)
-                } yield {success}
-                response
+                // response:\/[String, TuneRef] 
+                val response = 
+                  for {
+                     g <- GenreList.validate(genre).disjunction
+                     abc <- validAbc.disjunction
+                     // we will try to transcode immediately to png which might cause further errors
+                     t <- abc.createTemporaryImageFile.disjunction
+                     success <- abc.validTuneRef(genre).disjunction
+                  } yield success
+                response.validation
               }
             }
           }
@@ -483,7 +488,7 @@ trait MusicRestService extends HttpService with CORSDirectives {
                    e <- User.checkEmail(URLDecoder.decode(email, "UTF-8"))
                    p <- User.checkPassword(URLDecoder.decode(password, "UTF-8"), URLDecoder.decode(password2, "UTF-8"))
                    _ <- User.checkUnique(URLDecoder.decode(name, "UTF-8"))
-                   u <- User(n,e,p).insert(doRegister)
+                   u <- User(n,e,p).insert(doRegister).disjunction
                    /* New behaviour at 1.1.4.
                     * we'll send a different email depending on whether or not the user is pre-registered or 
                     * whether the referring application provides us with a base URL for the registration link.
@@ -492,9 +497,9 @@ trait MusicRestService extends HttpService with CORSDirectives {
                     * otherwise for Some(url) we use a confirmation email with a url to the reference we're supplied with
                     * 
                     */
-                   e <- Email.sendRegistrationMessage(u, doRegister, refererUrl)
+                   e <- Email.sendRegistrationMessage(u, doRegister, refererUrl).disjunction
                    } yield u    
-                 vu
+                 vu.validation
                  }
                } 
              }
@@ -542,12 +547,13 @@ trait MusicRestService extends HttpService with CORSDirectives {
         post { 
           formFields('name) { (name) =>     
             complete {
-              val vun:Validation[String, String] = for {
-                ur <- User.get(name)
-                e <- Email.sendPasswordMessage(ur)
-              } yield ur.name     
-              vun
-            }
+              val vun = 
+                for {
+                  ur <- User.get(name).disjunction
+                  e <- Email.sendPasswordMessage(ur).disjunction
+                } yield ur.name     
+                vun.validation
+             }
            }
          }
       } ~     

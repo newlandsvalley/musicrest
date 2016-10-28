@@ -45,13 +45,13 @@ class BulkImport(val abcDir: String, val dbName: String, val genre: String) {
   }
   
   private def insertToMongo(abc: Abc) {  
-    val tuneModel = new TuneModelCasbahImpl(MongoConnection(), dbName)
+    val tuneModel = new TuneModelCasbahImpl(MongoClient(), dbName)
     println ("inserting " + abc.name + " if it's new")
     abc.insertIfNew(genre)
   }
   
   private def createIndex(genre: String) {    
-    val tuneModel = new TuneModelCasbahImpl(MongoConnection(), dbName)
+    val tuneModel = new TuneModelCasbahImpl(MongoClient(), dbName)
     tuneModel.createIndex(genre)
   }
 }

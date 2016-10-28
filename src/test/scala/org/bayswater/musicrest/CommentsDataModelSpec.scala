@@ -40,7 +40,7 @@ class CommentsDataModelSpec extends Specification {
        
        val result = commentsModel.insertComment("irish", "tune1-reel", comment)
        
-       result.fold(e => failure("insertion failed: " + e), s => s must_== (s"Comment inserted user: john id: ${ts} for tune tune1-reel") )
+       result.fold(e => validationFailure("insertion failed: " + e), s => s must_== (s"Comment inserted user: john id: ${ts} for tune tune1-reel") )
     }     
     
     "allow the update of a comment" in {
@@ -53,7 +53,7 @@ class CommentsDataModelSpec extends Specification {
        
        val result = commentsModel.insertComment("irish", "tune12-reel", comment2)
        
-       result.fold(e => failure("insertion failed: " + e), s => s must_== (s"Comment updated user: john id: ${ts} for tune tune12-reel") )
+       result.fold(e => validationFailure("insertion failed: " + e), s => s must_== (s"Comment updated user: john id: ${ts} for tune tune12-reel") )
     }   
     
     "retrieve a comment" in {
@@ -63,7 +63,7 @@ class CommentsDataModelSpec extends Specification {
        commentsModel.insertComment("irish", "tune2-reel", comment)
        val result = commentsModel.getComment("irish", "tune2-reel", "john", ts)
        
-       result.fold(e => failure("retrieval failed: " + e), s => s must_== comment )
+       result.fold(e => validationFailure("retrieval failed: " + e), s => s must_== comment )
     }        
     
    "get a set of comments" in {
@@ -86,7 +86,7 @@ class CommentsDataModelSpec extends Specification {
     "raise an appropriate error when retrieving a non-existent comment" in {
        val ts = String.valueOf(-1L)
        val result = commentsModel.getComment("irish", "tune3-reel", "john", ts)       
-       result.fold(e => e must_== "Comment not found for tune tune3-reel and user john and id -1", s => failure("Retrieved non-existent comment") )
+       result.fold(e => e must_== "Comment not found for tune tune3-reel and user john and id -1", s => validationFailure("Retrieved non-existent comment") )
     }       
     
     "allow update of comments" in {      
@@ -98,7 +98,7 @@ class CommentsDataModelSpec extends Specification {
        commentsModel.insertComment("irish", "tune4-reel", comment2)
        val result = commentsModel.getComment("irish", "tune4-reel", "john", ts)
        
-       result.fold(e => failure("retrieval failed: " + e), s => s must_== comment2 )
+       result.fold(e => validationFailure("retrieval failed: " + e), s => s must_== comment2 )
     }
    
     "allow individual comments to be deleted" in {      
@@ -108,7 +108,7 @@ class CommentsDataModelSpec extends Specification {
        commentsModel.insertComment("irish", "tune5-reel", comment)
        val result = commentsModel.deleteComment("irish", "tune5-reel", comment.user, comment.cid)
        
-       result.fold(e => failure("deletion failed"), s => s must_== (s"Comment deleted user: john id: ${ts} for tune: tune5-reel") )
+       result.fold(e => validationFailure("deletion failed"), s => s must_== (s"Comment deleted user: john id: ${ts} for tune: tune5-reel") )
     }     
     
     "allow comment sets to be deleted" in {      
@@ -121,11 +121,15 @@ class CommentsDataModelSpec extends Specification {
        
        val result = commentsModel.deleteComments("irish", "tune6-reel")
        
-       result.fold(e => failure("deletion failed"), s => s must_== (s"All comments deleted for genre: irish and tune: tune6-reel") )
+       result.fold(e => validationFailure("deletion failed"), s => s must_== (s"All comments deleted for genre: irish and tune: tune6-reel") )
     }   
     
    
  
-  }
+  }  
+
+  // this is a hack to get the types to match up - must find out how to do it properly
+  def validationFailure (msg: String) =
+     msg must_== "true"
 }
   

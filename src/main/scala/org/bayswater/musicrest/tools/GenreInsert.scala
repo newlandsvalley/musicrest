@@ -35,7 +35,7 @@ object GenreInsert {
  
   def insertAllGenres(dbName: String) {
     val collectionName = "genre"
-    val mongoCollection = MongoConnection()(dbName)(collectionName)
+    val mongoCollection = MongoClient()(dbName)(collectionName)
     
     insert(mongoCollection, "irish", MongoDBList("jig","reel","hornpipe","barndance","highland","march","mazurka","polka","slide","slip jig","waltz"))
     insert(mongoCollection, "scottish", MongoDBList("jig","reel","hornpipe","barndance","march","schottische","slip jig","strathspey","waltz"))
@@ -55,7 +55,7 @@ object GenreInsert {
   }
   
    private def ensureIndexes(dbName: String, genres: List[String]) {    
-    val tuneModel = new TuneModelCasbahImpl(MongoConnection(), dbName)
+    val tuneModel = new TuneModelCasbahImpl(MongoClient(), dbName)
     genres.foreach {g => tuneModel.createIndex(g) }
   }
 }

@@ -41,34 +41,34 @@ case class UnregisteredUser(name: String, email: String, password: String, uuid:
 
 object User {
   
-  def checkName(name:String): Validation[String, String] = {
+  def checkName(name:String): \/[String, String] = {
     val userformat = """^[A-Za-z]([A-Za-z0-9_-]){3,24}$""".r
     if (userformat.pattern.matcher(name)matches)
-      name.success
+      name.right
     else
-      (s"Bad format for user $name - names should start with a letter, be at least 4 characters in length and may contain letters numbers, underscore and minus").fail
+      (s"Bad format for user $name - names should start with a letter, be at least 4 characters in length and may contain letters numbers, underscore and minus").left
   }
   
-  def checkUnique(name:String): Validation[String, String] = {
+  def checkUnique(name:String): \/[String, String] = {
     val userRef: Validation[String, UserRef] = UserModel().getUser(name)
     userRef.fold(
-        e => name.success,
-        u => ("User " + name + " already exists").fail
+        e => name.right,
+        u => ("User " + name + " already exists").left
         )
   }
    
-  def checkPassword(password:String, password2:String) : Validation[String, String] = 
+  def checkPassword(password:String, password2:String) : \/[String, String] = 
     if (password === password2) {
-       if (password.length < 7) "password must have at least 7 characters".fail
-       else if (!password.exists(_.isDigit)) "password must contain at least one digit".fail
-       else if (!password.exists(_.isLetter)) "password must contain at least one letter".fail
-       else password.success
+       if (password.length < 7) "password must have at least 7 characters".left
+       else if (!password.exists(_.isDigit)) "password must contain at least one digit".left
+       else if (!password.exists(_.isLetter)) "password must contain at least one letter".left
+       else password.right
      }
      else
-       "passwords must be identical".fail
+       "passwords must be identical".left
   
   
-  def checkEmail(email:String): Validation[String, String] = {
+  def checkEmail(email:String): \/[String, String] = {
     /* 
     val pattern = """^.+@[A-Z0-9.-]+\.[A-Z]{2,4}$""".r
     email match {
@@ -76,7 +76,7 @@ object User {
       case _ => "Invalid email address".fail
     }
     */
-    if (email.contains('@')) email.success else ("Invalid email address: " + email).fail
+    if (email.contains('@')) email.right else ("Invalid email address: " + email).left
   }
   
   def validate(uuid: String): Validation[String, UnregisteredUser] = UserModel().validateUser(uuid)

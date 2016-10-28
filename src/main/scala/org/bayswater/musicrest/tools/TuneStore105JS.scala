@@ -79,7 +79,7 @@ object TuneStore105JS {
  }
  
  def caseStatements(dbName: String): String = {
-   val tuneModel = new TuneModelCasbahImpl(MongoConnection(), dbName)
+   val tuneModel = new TuneModelCasbahImpl(MongoClient(), dbName)
    val sb = StringBuilder.newBuilder
    val genres = tuneModel.getSupportedGenres()
    genres.foreach( g=> {

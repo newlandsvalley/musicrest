@@ -51,7 +51,7 @@ object Transcoder {
            transcodeAbc(abcName, mediaType, genre, abc)
          }
       }
-      else ("Unsupported media type: " + mediaType).fail
+      else ("Unsupported media type: " + mediaType).failure[BinaryImage]
     }   
  
   
@@ -64,7 +64,7 @@ object Transcoder {
       val formatExtension = if (mediaType.subType == "postscript") "ps" else mediaType.subType
       transcode(abcName, mediaType, genre, formatExtension)
     }
-    else ("Unsupported media type: " + mediaType).fail
+    else ("Unsupported media type: " + mediaType).failure[BinaryImage]
   } 
   
   /* supports just wav at the moment */
@@ -85,7 +85,7 @@ object Transcoder {
       // transcodeToFile(abcName, genre, formatExtension)
       transcodeToFile(wavName, genre, formatExtension)
     }
-    else ("Unsupported media type: " + subtype).fail
+    else ("Unsupported media type: " + subtype).failure[File]
   }   
   
   def createTemporaryImageFile(abcName: String, genre: String, abc: Iterator[String]): Validation[String, String] = {   
@@ -94,7 +94,7 @@ object Transcoder {
     Util.writeTextFile(file, abc)
     val tempImage: Validation[String, File] =  transcodeAbcToFile(abcName, genre, "png", true)
     tempImage.fold(
-        e => e.fail
+        e => e.failure[String]
         ,
         s => abcName.success
         )
@@ -109,10 +109,15 @@ object Transcoder {
    */
   private def transcode(abcName: String, mediaType: MediaType, genre: String, formatExtension: String): Validation[String, BinaryImage] = {
     val vf:Validation[String, File] = transcodeAbcToFile(abcName, genre, formatExtension, false)
-    vf flatMap (f => {    
+    /*
+    vfd flatMap (f => {    
         val binaryImage = BinaryImage(mediaType, new BufferedInputStream(new FileInputStream(f)))
         binaryImage.success
     })
+    */
+    vf map (f =>   
+        BinaryImage(mediaType, new BufferedInputStream(new FileInputStream(f)))
+    )
   }
   
   private def getFileIfExists(abcName: String, genre: String, formatExtension: String): Validation[String, File] = {
@@ -123,7 +128,7 @@ object Transcoder {
       file.success
     }    
     else {
-      ("file " + filePath + " not cached").fail
+      ("file " + filePath + " not cached").failure[File]
     }
   }
   
@@ -161,7 +166,7 @@ object Transcoder {
                  val file = new File(fileName)
                  file.success
                  }
-      case _ => err.toString.fail
+      case _ => err.toString.failure[File]
     }
   }
   

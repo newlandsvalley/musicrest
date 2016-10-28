@@ -8,28 +8,32 @@ import com.mongodb.casbah.MongoDB
 
 trait MongoTransaction { 
   
-    /** Apparently, Mongo doesn't do transactions - this is the nearest we get - it ties the sequence of statements
+  /** Apparently, Mongo doesn't do transactions - this is the nearest we get - it ties the sequence of statements
    * to one particular Mongo connection and (we hope) raises an exception against that connection if things go wrong.
+   *
+   * We've now lost requestStart, getLastError.throwOnError, requestDone  for transaction management
+   * but now we catch exceptions straightforwardly, I guess it's no longer needed
    */
   def withMongoPseudoTransction [A] (mongoDB: MongoDB) (body:  =>  A) : Validation[String, A] = 
     try {
-      mongoDB.requestStart
+      // mongoDB.requestStart
       val b = body
-      mongoDB.getLastError.throwOnError
+      // mongoDB.getLastError.throwOnError
       b.success
     }
     catch {
-       case me: com.mongodb.MongoException.DuplicateKey  => {
+       case me: com.mongodb.DuplicateKeyException  => {
          println("MONGO Duplicate key EXCEPTION ")
-         me.getMessage().fail      
+         me.getMessage().failure[A]      
        }
        case e: Exception  => {
          println(s"MONGO EXCEPTION type: ${e.getClass()}")
-         e.getMessage().fail      
+         e.getMessage().failure[A]     
        }
     }
     finally {
-      mongoDB.requestDone      
+      // mongoDB.requestDone      
     }
+
 
 }

@@ -1,17 +1,15 @@
+
 import AssemblyKeys._ 
 
 assemblySettings
 
-name  := "musicrest-2.10"
+name  := "musicrest-2.11"
 
-version := "1.1.6"
-
-jarName in assembly <<= (name, version) map { (n, v) => n + "-" + v + ".jar" }
+version := "1.1.7"
 
 organization  := "org.bayswater.musicrest"
 
-scalaVersion  := "2.10.2"
-
+scalaVersion  := "2.11.7"
 
 scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8")
 
@@ -21,27 +19,32 @@ resolvers ++= Seq(
   "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/"
 )
 
+
 libraryDependencies ++= Seq(
-  "io.spray"            %   "spray-can"          % "1.1.0",
-  "io.spray"            %   "spray-routing"      % "1.1.0",
-  "io.spray"            %   "spray-caching"      % "1.1.0",
-  "io.spray"            %   "spray-testkit"      % "1.1.0",
-  "com.typesafe.akka"   %%  "akka-actor"         % "2.1.4",
-  "com.typesafe.akka"   %%  "akka-testkit"       % "2.1.4",
-  "org.scalaz"          %   "scalaz-core_2.10"   % "7.0.0",
-  "org.mongodb"         %%  "casbah"             % "2.6.2",
-  "net.liftweb"         %%  "lift-json"          % "2.5",
-  "javax.mail"          %   "mail"               % "1.4",
-  "org.specs2"          %%  "specs2"             % "1.14" % "test",
-  "io.argonaut"         %%   "argonaut"          % "6.0.4" % "test"
+  "io.spray"            %   "spray-can_2.11"     % "1.3.4",
+  "io.spray"            %   "spray-routing_2.11" % "1.3.4",
+  "io.spray"            %   "spray-caching_2.11" % "1.3.4",
+  "io.spray"            %   "spray-testkit_2.11" % "1.3.4",
+  "com.typesafe.akka"   %%  "akka-actor"         % "2.4.11",
+  "com.typesafe.akka"   %%  "akka-testkit"       % "2.4.11",
+  "org.scalaz"          %%  "scalaz-core"        % "7.1.6",
+  "org.scalaz.stream"   %%  "scalaz-stream"      % "0.8",
+  "org.mongodb"         %%  "casbah"             % "3.1.1",
+  "net.liftweb"         %   "lift-webkit_2.11"   % "3.0-M8",
+  "javax.mail"          %   "mail"               % "1.4.7",
+  "org.specs2"          %%  "specs2"             % "2.5-scalaz-7.1.6" % "test",
+  "io.argonaut"         %%  "argonaut"           % "6.1" % "test"
 )
 
 fork := true
 
 javaOptions in run += "-Dconfig.file=/home/john/Development/Workspace/Spray/musicrest/conf/musicrest.conf"
 
-javaOptions in test += "-Dconfig.file=/home/john/Development/Workspace/Spray/musicrest/conf/test.conf"
+javaOptions in Test += "-Dconfig.file=/home/john/Development/Workspace/Spray/musicrest/conf/test.conf"
+
+scalacOptions in Test ++= Seq("-Yrangepos")
 
 net.virtualvoid.sbt.graph.Plugin.graphSettings
 
-seq(Revolver.settings: _*)
+
+
