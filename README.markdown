@@ -16,7 +16,9 @@ Although MusicRest is potentially useful for any genre of music, the current rel
 
 #### _URL Scheme_
 
-URL path segments in italics represent fixed text; those in bold type are variable.  For example, the text 'genre' is fixed whilst **agenre** can be any of _irish, scandi, scottish or klezmer_. The following URLs access or maintain music:
+URL path segments in italics represent fixed text; those in bold type are variable.  For example, the text 'genre' is fixed whilst **agenre** can be any of _irish, scandi, scottish or klezmer_. The following URLs are supported:
+
+##### Tunes
 
 *  GET / _musicrest_ / _genre_ - get a list of genres.
 
@@ -42,9 +44,12 @@ URL path segments in italics represent fixed text; those in bold type are variab
 
 *  POST / _musicrest_ / _genre_ / _transcode_ - submit a tune to temporary storage to check the validity of the ABC
 
-A user must be logged in before he can submit or test-transcode a tune.  Only the original submitter or the *administrator* user is allowed to delete tunes. There is also a fairly conventional set of URLs for user maintenance.
+A user must be logged in before he can submit or test-transcode a tune. Only the original submitter or the *administrator* user is allowed to delete tunes.  
 
-Version 1.1.4 introduced the possibility of attaching comments to a tune:
+Production of wav output is still supported, but deprecated.  It is too expensive to produce server-side unless you have a powerful server and a large data cache. 
+
+
+##### Comments
 
 *  GET / _musicrest_ / _genre_ / **agenre** / _tune_ / **atune** / _comments_ - get the comments attached to a tune
 
@@ -56,9 +61,11 @@ Version 1.1.4 introduced the possibility of attaching comments to a tune:
 
 *  DELETE / _musicrest_ / _genre_ / **agenre** / _comments_  - delete all comments in the genre
 
-Production of wav output is still supported, but deprecated.  It is too expensive to produce server-side unless you have a powerful server and a large data cache. 
+##### Users
 
-##### URL Parameters
+There is also a fairly conventional set of URLs for user maintenance.
+
+#### _URL Parameters_
 
 URLs that return lists take optional paging parameters indicating the number of entries on a page and the identity of the page to display. The URL that requests a tune in _wav_ format takes optional parameters indicating the tunes's instrument, tempo and transposition.
 

@@ -69,7 +69,7 @@ class UserList(i: Iterator[UserRef], page: Int, size: Int) {
   
    /** format a returned user from the db list as an html table row item */
   private def buildHtmlTr(u: UserRef): String = 
-    s"<tr><td>${u.name}</td><td>${u.email}</td></tr>\n"       
+    s"<tr><td>${u.name}</td><td>${u.email}</td><td>${u.valid}</td></tr>\n"       
  
   // private val pageInfoJSON:String = " \"pagination\" : { \"page\""  + ": \"" + page + "\" ," + "\"size\""  + ": \"" + size + "\" }"
   private val pageInfoJSON:String = s""""pagination" : { "page": "$page", "size": "$size" }"""

@@ -66,23 +66,14 @@ object Email {
     }
     // val url=s"http://${musicRestSettings.serverHost}:${musicRestSettings.serverPort}/musicrest/user/validate/${user.uuid}"
     // val url = "http://localhost:8080/musicrest/user/validate/" + user.uuid
-    val subject = "Musicrest user validation"
+    val subject = "The traditional tunes database: user validation"
     val message = if (isPreRegistered) { 
-      "Thanks for signing up! \n\n" +
-      "Your account has been created for you, you can login with the following credentials " +
-      "------------------------\n" +
-      "Username: " + user.name + "\n" +
-      "Password: " + user.password + "\n" +
-      "------------------------\n\n"       
+      "Thanks for signing up to the traditional tunes database! \n\n" +
+      "Your account has been created for you.  Please contact John Watson privately for your login details.\n\n" 
     }
-    else {           
-      "Thanks for signing up! \n\n" +
-      "Your account has been created, you can login with the following credentials after you have activated your account " +
-      "by pressing the url below. \n\n" +
-      "------------------------\n" +
-      "Username: " + user.name + "\n" +
-      "Password: " + user.password + "\n" +
-      "------------------------\n\n" + 
+    else {  
+      "Thanks for signing up to the traditional tunes database! \n\n" +
+      "Your account has been created. \n\n" +
       "Please click this link to activate your account: " + url + "\n"
     }
     

@@ -32,7 +32,7 @@ case class User(name:String, email:String, password:String) {
   def insert(doRegister: Boolean): Validation[String, UnregisteredUser] = UserModel().insertUser(this, doRegister)    
 }
 
-case class UserRef(name:String, email:String, password:String) 
+case class UserRef(name:String, email:String, password:String, valid: String) 
 
 /* an unregistered user is one who is on, or about to be placed on the user database
  * but who has not necessarily registered by clicking on the registration email link

@@ -21,7 +21,7 @@ uname=$2
 password=$3
 email=$4
 
-java -Dconfig.file=conf/musicrest.conf -classpath target/scala-2.10/musicrest-2.10-1.1.6.jar org.bayswater.musicrest.tools.UserInsert $dbname $uname $password $email
+java -Dconfig.file=conf/musicrest.conf -classpath target/scala-2.11/musicrest-2.11-assembly-1.1.7.jar org.bayswater.musicrest.tools.UserInsert $dbname $uname $password $email
 
 
 echo "abc return: " $retcode

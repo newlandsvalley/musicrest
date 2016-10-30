@@ -36,7 +36,8 @@ class UserModelCasbahImpl (val mongoClient: MongoClient, val dbname: String) ext
       case Some(userDBObject) => {
                                val email = userDBObject.get("email").asInstanceOf[String]
                                val password = userDBObject.get("password").asInstanceOf[String]
-                               UserRef(name, email, password).success
+                               val valid = userDBObject.get("valid").asInstanceOf[String]
+                               UserRef(name, email, password, valid).success
                                }
       case None => "No such user".failure[UserRef]
     } 
@@ -94,7 +95,7 @@ class UserModelCasbahImpl (val mongoClient: MongoClient, val dbname: String) ext
 
   def getUsers(page: Int, size: Int): Iterator[UserRef] = {    
     val mongoCollection = mongoClient(dbname)("users")
-    val fields = MongoDBObject("_id" -> 1, "email" -> 2, "password" -> 3)
+    val fields = MongoDBObject("_id" -> 1, "email" -> 2, "password" -> 3, "valid" -> 4)
     val everything = MongoDBObject.empty 
     val skip = (page -1) * size
     val rows = mongoCollection.find(everything, fields).skip(skip).limit(size)     
@@ -103,7 +104,8 @@ class UserModelCasbahImpl (val mongoClient: MongoClient, val dbname: String) ext
       val name = getStringField(x, "_id", "no name")
       val email = getStringField(x, "email", "no email")
       val password = getStringField(x, "password", "no password")
-      UserRef(name, email, password)
+      val valid = getStringField(x, "valid", "no validity")
+      UserRef(name, email, password, valid)
     }   
   }
 
