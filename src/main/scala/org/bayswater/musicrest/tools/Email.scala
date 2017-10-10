@@ -23,10 +23,12 @@ import scalaz._
 import Scalaz._
 import org.bayswater.musicrest.model.{User, UnregisteredUser, UserRef}
 import org.bayswater.musicrest.MusicRestSettings
+import org.bayswater.musicrest.HardCodedSettings
 
 object Email {
   
   val musicRestSettings = MusicRestSettings
+  val hardCodedSettings = HardCodedSettings
   
   private def send(recipientAddress:String, subject: String, content:String): Unit = {
     // Set up the mail object
@@ -107,7 +109,7 @@ object Email {
   }
   
   object MusicRestMailAuthenticator extends Authenticator {
-    override def getPasswordAuthentication(): PasswordAuthentication =  new PasswordAuthentication(musicRestSettings.mailLogin, musicRestSettings.mailPassword)    
+    override def getPasswordAuthentication(): PasswordAuthentication =  new PasswordAuthentication(musicRestSettings.mailLogin, hardCodedSettings.mailPassword)    
   }
 
 }

@@ -5,7 +5,7 @@ assemblySettings
 
 name  := "musicrest-2.11"
 
-version := "1.1.7"
+version := "1.1.8"
 
 organization  := "org.bayswater.musicrest"
 

@@ -9,6 +9,7 @@
 /project/plugins/project
 /conf/hosted.conf
 /conf/musicrest-local.conf
+/src/main/scala/org/bayswater/musicrest/HardCodedSettings.scala
 target/
 cache/
 deprecated/
