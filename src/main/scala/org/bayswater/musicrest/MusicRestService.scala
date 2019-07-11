@@ -45,6 +45,7 @@ import org.bayswater.musicrest.authentication.Backend._
 import org.bayswater.musicrest.authentication.CORSDirectives
 import org.bayswater.musicrest.RequestResponseLogger._
 
+
 // we don't implement our route structure directly in the service actor because
 // we want to be able to test it independently, without having to spin up an actor
 class MusicServiceActor extends Actor with MusicRestService {

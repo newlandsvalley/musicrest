@@ -20,15 +20,15 @@ import spray.http._
 import spray.httpx.marshalling._
 
 class Welcome {
-  
-  val version = "1.1.6"
-  
+
+  val version = "1.2.0"
+
   val welcomeMessage = s"MusicRest version $version using spray-routing on spray-can"
-  
+
   def toXML: String = s"<welcome>$welcomeMessage<welcome>"
-  
+
   def toHtml: String = s"<h2>$welcomeMessage<h2>"
-  
+
   /* supports plain text, html and xml at the moment */
   def to(mediaType:MediaType): String = {
       val formatExtension:String = mediaType.subType
@@ -38,13 +38,13 @@ class Welcome {
           case "plain" =>  welcomeMessage
           case _ => "Unsupported media type: " + formatExtension
         }
-    }   
+    }
 }
 
 object Welcome {
   def apply():Welcome = new Welcome()
 
-  implicit val welcomeMarshaller = {    
+  implicit val welcomeMarshaller = {
 
      val canMarshalTo = Array (ContentTypes.`text/plain`,
                                ContentType(MediaTypes.`text/xml`),
@@ -56,6 +56,6 @@ object Welcome {
        }
      }
    }
-  
- 
+
+
 }

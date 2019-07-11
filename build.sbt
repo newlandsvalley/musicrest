@@ -1,11 +1,13 @@
 
-import AssemblyKeys._ 
+import AssemblyKeys._
 
 assemblySettings
 
+test in assembly := {}
+
 name  := "musicrest-2.11"
 
-version := "1.1.8"
+version := "1.2.0"
 
 organization  := "org.bayswater.musicrest"
 
@@ -45,6 +47,3 @@ javaOptions in Test += "-Dconfig.file=/home/john/Development/Workspace/Spray/mus
 scalacOptions in Test ++= Seq("-Yrangepos")
 
 net.virtualvoid.sbt.graph.Plugin.graphSettings
-
-
-
