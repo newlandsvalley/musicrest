@@ -27,7 +27,7 @@ import MediaTypes._
 import spray.routing.authentication.BasicAuth
 import spray.util.{LoggingContext, SprayActorLogging}
 
-import scala.concurrent.{ ExecutionContext, Future, Promise }  
+import scala.concurrent.{ ExecutionContext, Future, Promise }
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import scalaz.Validation
@@ -53,7 +53,7 @@ class MusicServiceActor extends Actor with MusicRestService {
   // the HttpService trait defines only one abstract member, which
   // connects the services environment to the enclosing actor or test
   def actorRefFactory = context
-  
+
   // this actor only runs our route, but you could add
   // other things here, like request stream processing
   // or timeout handling
@@ -65,13 +65,13 @@ class MusicServiceActor extends Actor with MusicRestService {
  *  the default exception handler just translates them into bland 500 or 400 errors with no explanatory
  *  error text.  So instead, we wrap our routes in our own exception handler which builds a more
  *  comprehensible HTTP status message.
- * 
+ *
  */
 object MusicRestService {
   import spray.http.StatusCodes.BadRequest
-  
+
   case class MusicRestException(message: String) extends RuntimeException(message, null)
-  
+
   implicit def myExceptionHandler(implicit log: LoggingContext) =
     ExceptionHandler {
       case e: MusicRestException => ctx =>
@@ -83,14 +83,14 @@ object MusicRestService {
 
 
 /** MusicRestService:
- *  
+ *
  *  musicRestRoute = tuneRoute ~ commentsRoute ~ userRoute
- *  
+ *
  */
-trait MusicRestService extends HttpService with CORSDirectives {    
-  
+trait MusicRestService extends HttpService with CORSDirectives {
+
   import MusicRestService.myExceptionHandler
-  
+
   val supportedGenres = SupportedGenres
   val logger = implicitly[LoggingContext]
   println(s"log debug?: ${logger.isDebugEnabled} info?: ${logger.isInfoEnabled} ")
@@ -98,65 +98,65 @@ trait MusicRestService extends HttpService with CORSDirectives {
   val begin = {
     establishGenres
   }
-  
- 
+
+
   /* this trait defines our service behaviour independently from the service actor
-   *  
-   * a route that deal with genres and tunes in their various guises 
-   *  
+   *
+   * a route that deal with genres and tunes in their various guises
+   *
    * overall route is musicRestRoute = tuneRoute ~ userRoute
    */
-  val tuneRoute =  
-    pathPrefix("musicrest") {   
-      pathEndOrSingleSlash {     
+  val tuneRoute =
+    pathPrefix("musicrest") {
+      pathEndOrSingleSlash {
         get {
             // logger.info("welcome")
             complete (Welcome())
         }
       }
-    } ~   
+    } ~
     path("musicrest" / "config" ) {
       get {
-          authenticate(BasicAuth(AdminAuthenticator, "musicrest")) { user =>     
-             _.complete("config: scriptDir: " + MusicRestSettings.scriptDir + 
+          authenticate(BasicAuth(AdminAuthenticator, "musicrest")) { user =>
+             _.complete("config: scriptDir: " + MusicRestSettings.scriptDir +
                               " abcDirCore: " + MusicRestSettings.abcDirCore +
-                              " pdfDirCore: " + MusicRestSettings.pdfDirCore + 
+                              " pdfDirCore: " + MusicRestSettings.pdfDirCore +
                               " abcDirPlay: " + MusicRestSettings.abcDirPlay +
-                              " wavDirPlay: " + MusicRestSettings.wavDirPlay + 
+                              " wavDirPlay: " + MusicRestSettings.wavDirPlay +
                               " dbName: " + MusicRestSettings.dbName    +
-                              " genres: " + supportedGenres.genres.toString) 
+                              " genres: " + supportedGenres.genres.toString)
           }
         }
     } ~
     // list of music genres
-    path("musicrest" / "genre") { 
-      get { ctx => ctx.complete(GenreList()) }  
-    } ~  
+    path("musicrest" / "genre") {
+      get { ctx => ctx.complete(GenreList()) }
+    } ~
     pathPrefix("musicrest" / "genre" ) {
       path(Segment ) { genre =>
-        get { ctx => ctx.complete(RhythmList(genre)) }        
+        get { ctx => ctx.complete(RhythmList(genre)) }
       } ~
-      path(Segment / "exists" ) { genre => 
+      path(Segment / "exists" ) { genre =>
         // return true if the genre exists (is supported)
-        get {   
+        get {
           respondWithMediaType(`text/plain`) {
             complete{
               val exists = SupportedGenres.isGenre(genre)
               exists.toString
               }
-          } 
-        } 
-      } ~     
+          }
+        }
+      } ~
       // within genre
       path(Segment / "tune"  ) { genre =>
-        post {     
-          authenticate(BasicAuth(UserAuthenticator, "musicrest")) { user =>     
-            entity(as[AbcPost]) { post =>  
+        post {
+          authenticate(BasicAuth(UserAuthenticator, "musicrest")) { user =>
+            entity(as[AbcPost]) { post =>
               complete {
                 val abcSubmission = AbcSubmission(post.notes.lines, genre, user.username)
                 val validAbc:Validation[String, Abc] = abcSubmission.validate
-                // response:\/[String, TuneRef] = 
-                val response = 
+                // response:\/[String, TuneRef] =
+                val response =
                   for {
                     g <- GenreList.validate(genre).disjunction
                     abc <- validAbc.disjunction
@@ -164,32 +164,36 @@ trait MusicRestService extends HttpService with CORSDirectives {
                     t <- abc.to(`image/png`).disjunction
                     success <- abc.upsert(genre).disjunction
                   } yield success
-                response.validation              
+                response.validation
               }
             }
           }
         } ~
         // list of tunes within the genre
         parameters('sort ? "alpha", 'page ? 1, 'size ? MusicRestSettings.defaultPageSize) { (sort, page, size) =>
-          get {  
+          get {
             val tuneList = TuneList(genre, sort, page, size)
-            val totalPages = (tuneList.totalResults + size - 1) / size 
-            respondWithHeader(paginationHeader(page, totalPages)) {
-              ctx => ctx.complete(tuneList) 
+            val totalPages = (tuneList.totalResults + size - 1) / size
+            corsFilter(MusicRestSettings.corsOrigins) {
+              respondWithHeader(paginationHeader(page, totalPages)) {
+                ctx => ctx.complete(tuneList)
+                }
               }
             }
-        } 
-      } ~        
-      path(Segment / "tune" / Segment) { (genre, tuneEncoded) =>  
-        // get a tune (in whatever format)         
-        get { 
+        }
+      } ~
+      path(Segment / "tune" / Segment) { (genre, tuneEncoded) =>
+        // get a tune (in whatever format)
+        get {
           val tune = java.net.URLDecoder.decode(tuneEncoded, "UTF-8")
           // logger.info(s"get - tune name encoded: ${tuneEncoded} decoded: ${tune}")
-            complete(Tune(genre, tune) ) 
+          corsFilter(MusicRestSettings.corsOrigins) {
+            complete(Tune(genre, tune) )
+            }
         } ~
-        delete {       
-          authenticate(BasicAuth(UserAuthenticator, "musicrest")) { user =>     
-            val tune = java.net.URLDecoder.decode(tuneEncoded, "UTF-8")  
+        delete {
+          authenticate(BasicAuth(UserAuthenticator, "musicrest")) { user =>
+            val tune = java.net.URLDecoder.decode(tuneEncoded, "UTF-8")
             val submitter = TuneModel().getSubmitter(genre, tune)
             logger.info(s"original submitter of $tune was $submitter - delete requester: ${user.username}")
             // allow the administrator or the original submitter to delete the tune
@@ -202,7 +206,7 @@ trait MusicRestService extends HttpService with CORSDirectives {
               // delete from the file system cache
               val dir = new File(MusicRestSettings.transcodeCacheDir)
               clearTuneFromCache(dir, tune)
-              // delete all related comments 
+              // delete all related comments
               Comments.deleteComments(genre, tune)
               // delete from the database
               val result = TuneModel().delete(genre, tune)
@@ -211,7 +215,7 @@ trait MusicRestService extends HttpService with CORSDirectives {
             else {
               // we'll use the horrible exception mechanism for the time being to get
               // a proper HTTP response
-              val message = 
+              val message =
                 if (submitter.isDefined) {
                   s"You can only delete tunes that you originally submitted"
                 }
@@ -223,78 +227,80 @@ trait MusicRestService extends HttpService with CORSDirectives {
           }
         }
       } ~
-      path(Segment / "tune" / Segment / "exists" ) { (genre, tuneEncoded) => 
-        // return true if the tune exists in the database       
-        get {   
+      path(Segment / "tune" / Segment / "exists" ) { (genre, tuneEncoded) =>
+        // return true if the tune exists in the database
+        get {
           respondWithMediaType(`text/plain`) {
             complete {
               val tuneNotes = java.net.URLDecoder.decode(tuneEncoded, "UTF-8")
-              Tune(genre, tuneNotes).exists 
+              Tune(genre, tuneNotes).exists
             }
-          } 
-        } 
-      } ~     
-      path(Segment / "tune" / Segment / "abc" ) { (genre, tuneEncoded) => 
-        // get a tune (in abc defined by abc.vnd (plain text) format)     
+          }
+        }
+      } ~
+      path(Segment / "tune" / Segment / "abc" ) { (genre, tuneEncoded) =>
+        // get a tune (in abc defined by abc.vnd (plain text) format)
         // as for binary types, suggest a file name for use with download attributes
-        get {   
+        get {
           respondWithMediaType(Tune.AbcType) {
-            val tuneName = java.net.URLDecoder.decode(tuneEncoded, "UTF-8") 
+            val tuneName = java.net.URLDecoder.decode(tuneEncoded, "UTF-8")
             val tune = Tune(genre, tuneName)
             suggestDownloadFileName("abc", tune.safeFileName) {
               complete{
-                tune.asAbc      
+                tune.asAbc
               }
             }
-          } 
+          }
         } ~
         post {
-          // add an alternative tune title 
-          authenticate(BasicAuth(UserAuthenticator, "musicrest")) { user =>     
-            entity(as[AlternativeTitlePost]) { post =>  
-              val tune = java.net.URLDecoder.decode(tuneEncoded, "UTF-8")              
+          // add an alternative tune title
+          authenticate(BasicAuth(UserAuthenticator, "musicrest")) { user =>
+            entity(as[AlternativeTitlePost]) { post =>
+              val tune = java.net.URLDecoder.decode(tuneEncoded, "UTF-8")
               complete {
-                Abc.addAlternativeTitle(genre, tune, post.title) 
+                Abc.addAlternativeTitle(genre, tune, post.title)
               }
             }
           }
         }
       } ~
-      path(Segment / "tune" / Segment / "html" ) { (genre, tuneEncoded) => 
-        // get a tune (in abc represented in html format)         
-        get {   
+      path(Segment / "tune" / Segment / "html" ) { (genre, tuneEncoded) =>
+        // get a tune (in abc represented in html format)
+        get {
           respondWithMediaType(`text/html`) {
             val tuneName = java.net.URLDecoder.decode(tuneEncoded, "UTF-8")
             complete(Tune(genre, tuneName).asHtml )
-          } 
-        } 
-      } ~     
-      path(Segment / "tune" / Segment / "json" ) { (genre, tuneEncoded) => 
-        // get a tune (in abc represented in json format)         
-        get {   
+          }
+        }
+      } ~
+      path(Segment / "tune" / Segment / "json" ) { (genre, tuneEncoded) =>
+        // get a tune (in abc represented in json format)
+        get {
           respondWithMediaType(`application/json`) {
-            val tuneName = java.net.URLDecoder.decode(tuneEncoded, "UTF-8")
-            complete(Tune(genre, tuneName).asJson )
-          } 
-        } 
-      } ~     
-      path(Segment / "tune" / Segment / "wav" ) { (genre, tuneEncoded) => 
+            corsFilter(MusicRestSettings.corsOrigins) {
+              val tuneName = java.net.URLDecoder.decode(tuneEncoded, "UTF-8")
+              complete(Tune(genre, tuneName).asJson )
+            }
+          }
+        }
+      } ~
+      path(Segment / "tune" / Segment / "wav" ) { (genre, tuneEncoded) =>
         parameters ('instrument ? "piano", 'transpose ? 0, 'tempo ? "120") { (instrument, transpose, tempo) =>
-          get { 
+          get {
             val tune = java.net.URLDecoder.decode(tuneEncoded, "UTF-8")
             // System.out.println(s"got wav request for $tune instrument %instrument, transpose $transpose, tempo $tempo")
-            val validTune = Tune.tuneToWav(Tune(genre, tune), instrument, transpose, tempo)            
+            val validTune = Tune.tuneToWav(Tune(genre, tune), instrument, transpose, tempo)
             validTune.fold (
-               e => _.complete(e),  
-               s => getFromFile(s)  
-            )  
+               e => _.complete(e),
+               s => getFromFile(s)
+            )
           }
-        } 
+        }
       }  ~
-      /**  Get a temporary tune in png format (resulting from a try transcode */ 
-      path(Segment / "tune" / Segment / "temporary" / "png"  ) { (genre, tuneEncoded) => 
-        // get a tune (in abc represented in html format)         
-        get {   
+      /**  Get a temporary tune in png format (resulting from a try transcode */
+      path(Segment / "tune" / Segment / "temporary" / "png"  ) { (genre, tuneEncoded) =>
+        // get a tune (in abc represented in html format)
+        get {
           respondWithMediaType(`image/png`) {
             val tuneName = java.net.URLDecoder.decode(tuneEncoded, "UTF-8")
             // System.out.println("got request for temporary tune image for " + tuneName)
@@ -303,30 +309,27 @@ trait MusicRestService extends HttpService with CORSDirectives {
               futureImage
             }
           }
-        } 
+        }
       }  ~
       /** Get a tune in one of the supported binary file type formats (ps, pdf, midi )
        *  This is an alternative URL which sidesteps content negotiation and just
        *  returns the MIME type implied by the file extension (or an error if it's not supported)
-       *  
-       *  CORS.  We need to allow cross-origin requests from tradtunedb for midi tunes.  At the moment
-       *  we just return origin '*' as a rough and ready response whilst we await the full CORS
-       *  implementation in Spray.
-       *  
+       *
+       *
        *  Anchor tag download attribute in prospective clients:  we offer a suggested file name by means of
        *  the content-disposition header
-       */      
-      path(Segment / "tune" / Segment / Segment ) { (genre, tuneEncoded, fileType) =>  
-        get { 
+       */
+      path(Segment / "tune" / Segment / Segment ) { (genre, tuneEncoded, fileType) =>
+        get {
           val contentTypeOpt = getContentTypeFromFileType(fileType:String)
           if (contentTypeOpt.isDefined) {
-            respondWithMediaType(contentTypeOpt.get.mediaType) { 
-              val tuneName = java.net.URLDecoder.decode(tuneEncoded, "UTF-8") 
+            respondWithMediaType(contentTypeOpt.get.mediaType) {
+              val tuneName = java.net.URLDecoder.decode(tuneEncoded, "UTF-8")
               val tune = Tune(genre, tuneName)
               suggestDownloadFileName(fileType, tune.safeFileName) {
-                corsFilter(MusicRestSettings.corsOrigins) {      
+                corsFilter(MusicRestSettings.corsOrigins) {
                    _.complete {
-                     // val futureBin:Future[Validation[String, BinaryImage]] = Tune(genre, tune).asFutureBinary(fileType) 
+                     // val futureBin:Future[Validation[String, BinaryImage]] = Tune(genre, tune).asFutureBinary(fileType)
                      val futureBin = tune.asFutureBinary(contentTypeOpt.get)
                      futureBin
                   }
@@ -340,38 +343,40 @@ trait MusicRestService extends HttpService with CORSDirectives {
             // failWith(new Exception("Unrecognized file extension " + fileType))
             reject()
           }
-        } 
-      } ~    
+        }
+      } ~
       path(Segment / "search"  ) { genre =>
         parameters ('page ? "1", 'size ? MusicRestSettings.defaultPageSize.toString, 'sort ? "alpha") { (pageStr, sizeStr, sort) =>
-          get { ctx => 
-            // val searchParams = Map("page" -> pageStr, "size" -> sizeStr, "sort" -> sort)
-            val queryParams = ctx.request.uri.query.toMultiMap
-            // Spray now provides a MultiMap not a Map which we need to flatten
-            val searchParams = queryParams mapValues {x => x.head }
-            //System.out.println(s"search params $searchParams")
-            val page = pageStr.toInt
-            val size = sizeStr.toInt
-            // System.out.println("request for page: " + page)
-            ctx.complete {              
-              val tuneList = TuneList(genre, searchParams, sort, page, size)
-              val totalPages = (tuneList.totalResults + size - 1) / size 
-              val headers = List(paginationHeader(page, totalPages))
-              (200, headers, tuneList) 
+          get {
+            corsFilter(MusicRestSettings.corsOrigins) {  ctx =>
+              // val searchParams = Map("page" -> pageStr, "size" -> sizeStr, "sort" -> sort)
+              val queryParams = ctx.request.uri.query.toMultiMap
+              // Spray now provides a MultiMap not a Map which we need to flatten
+              val searchParams = queryParams mapValues {x => x.head }
+              //System.out.println(s"search params $searchParams")
+              val page = pageStr.toInt
+              val size = sizeStr.toInt
+              // System.out.println("request for page: " + page)
+              ctx.complete {
+                val tuneList = TuneList(genre, searchParams, sort, page, size)
+                val totalPages = (tuneList.totalResults + size - 1) / size
+                val headers = List(paginationHeader(page, totalPages))
+                (200, headers, tuneList)
+                }
               }
-            }  
-          }             
-      } ~ 
+            }
+          }
+      } ~
       // one-off transcoding service
       path(Segment / "transcode"  ) { genre =>
-        authenticate(BasicAuth(UserAuthenticator, "musicrest")) { user =>      
-          post { 
-            entity(as[AbcPost]) { post =>     
+        authenticate(BasicAuth(UserAuthenticator, "musicrest")) { user =>
+          post {
+            entity(as[AbcPost]) { post =>
               complete {
                 val abcSubmission = AbcSubmission(post.notes.lines, genre, user.username)
                 val validAbc:Validation[String, Abc] = abcSubmission.validate
-                // response:\/[String, TuneRef] 
-                val response = 
+                // response:\/[String, TuneRef]
+                val response =
                   for {
                      g <- GenreList.validate(genre).disjunction
                      abc <- validAbc.disjunction
@@ -384,44 +389,46 @@ trait MusicRestService extends HttpService with CORSDirectives {
             }
           }
         }
-      }          // end of path prefix musicrest/genre          
-    } 
- 
-  
-  
-  val commentsRoute =  
+      }          // end of path prefix musicrest/genre
+    }
+
+
+
+  val commentsRoute =
     pathPrefix("musicrest" / "genre" ) {
       // we support a URL for deleting all comments within a genre but expect it will
       // only really be used in testing or in initial setup
-      path(Segment / "comments" ) { genre => 
+      path(Segment / "comments" ) { genre =>
         delete {
-          authenticate(BasicAuth(AdminAuthenticator, "musicrest")) { user =>   
-            complete { 
+          authenticate(BasicAuth(AdminAuthenticator, "musicrest")) { user =>
+            complete {
               Comments.deleteAllComments(genre)
-              }       
+              }
           }
-        } 
+        }
       } ~
-      path(Segment / "tune" / Segment / "comments" ) { (genre, tuneEncoded) => { 
-        val tuneId = java.net.URLDecoder.decode(tuneEncoded, "UTF-8")        
-        // return all comments associated with the tune 
-        get {   
-          complete{
-            val commentsSeq = Comments.getComments(genre, tuneId)
-            Comments(commentsSeq)
-          } 
-        } ~ 
+      path(Segment / "tune" / Segment / "comments" ) { (genre, tuneEncoded) => {
+        val tuneId = java.net.URLDecoder.decode(tuneEncoded, "UTF-8")
+        // return all comments associated with the tune
+        get {
+          corsFilter(MusicRestSettings.corsOrigins) {
+            complete {
+              val commentsSeq = Comments.getComments(genre, tuneId)
+              Comments(commentsSeq)
+            }
+          }
+        } ~
         post {
-          authenticate(BasicAuth(UserAuthenticator, "musicrest")) { user =>   
+          authenticate(BasicAuth(UserAuthenticator, "musicrest")) { user =>
             /* Post is used both for posting the original comment and editing a comment.
              * In each case, submitter is the original submitter of the comment
              */
             post {
               formFields('user, 'timestamp, 'subject, 'text) { (submitter, timestamp, subject, text) =>  {
-              val authorized = isOwnerOrAdministrator(submitter, user.username)  
-              
+              val authorized = isOwnerOrAdministrator(submitter, user.username)
+
               if (authorized) {
-                complete {                
+                complete {
                   val comment = Comment(submitter, timestamp, subject, text)
                   Comments.insertComment(genre, tuneId, comment)
                   }
@@ -433,24 +440,26 @@ trait MusicRestService extends HttpService with CORSDirectives {
               }  }
             }
           }
-        }     
-      } } ~    
+        }
+      } } ~
       path(Segment / "tune" / Segment / "comment" / Segment / Segment ) { (genre, tuneEncoded, submitterEncoded, timestamp) =>  {
-        val tuneId = java.net.URLDecoder.decode(tuneEncoded, "UTF-8")        
-        val submitter = java.net.URLDecoder.decode(submitterEncoded, "UTF-8")        
-        /** Get an individual comment  */      
-        get {     
-          complete {            
-            Comments.getComment(genre, tuneId, submitter, timestamp)
+        val tuneId = java.net.URLDecoder.decode(tuneEncoded, "UTF-8")
+        val submitter = java.net.URLDecoder.decode(submitterEncoded, "UTF-8")
+        /** Get an individual comment  */
+        get {
+          corsFilter(MusicRestSettings.corsOrigins) {
+            complete {
+              Comments.getComment(genre, tuneId, submitter, timestamp)
+            }
           }
         } ~
-        delete {    
-          authenticate(BasicAuth(UserAuthenticator, "musicrest")) { user =>   {            
-  
+        delete {
+          authenticate(BasicAuth(UserAuthenticator, "musicrest")) { user =>   {
+
            val authorized = isOwnerOrAdministrator(submitter, user.username)
-            
+
             if (authorized) {
-              respondWithMediaType(`text/plain`) {              
+              respondWithMediaType(`text/plain`) {
                 complete {
                   Comments.deleteComment(genre, tuneId, submitter, timestamp)
                 }
@@ -459,25 +468,25 @@ trait MusicRestService extends HttpService with CORSDirectives {
             else  {
               reject(AuthorizationFailedRejection)
             }
-          } }  
+          } }
         } }
-      }          // end of comments paths   
-    } 
- 
+      }          // end of comments paths
+    }
 
-  
-  /* route that deal with user maintenance */ 
-  val userRoute =         
+
+
+  /* route that deal with user maintenance */
+  val userRoute =
     pathPrefix("musicrest") {
-      path("user") { 
-       post { 
+      path("user") {
+       post {
           /* create new user.  We will allow any user to submit his details, but if we detect that the administrator
            * is the currently logged-in user, we assume he is creating a user of behalf of someone else
            * and so we set up a pre-registered user
            */
-          formFields('name, 'email, 'password, 'password2, 'refererurl?) { (name, email, password, password2, refererUrl) =>  {  
+          formFields('name, 'email, 'password, 'password2, 'refererurl?) { (name, email, password, password2, refererUrl) =>  {
             userName  { userOpt => {
-               // val vu:Validation[String, String] 
+               // val vu:Validation[String, String]
                val doRegister = userOpt match {
                  case Some("administrator") => true
                  case _ => false
@@ -491,118 +500,120 @@ trait MusicRestService extends HttpService with CORSDirectives {
                    _ <- User.checkUnique(URLDecoder.decode(name, "UTF-8"))
                    u <- User(n,e,p).insert(doRegister).disjunction
                    /* New behaviour at 1.1.4.
-                    * we'll send a different email depending on whether or not the user is pre-registered or 
+                    * we'll send a different email depending on whether or not the user is pre-registered or
                     * whether the referring application provides us with a base URL for the registration link.
-                    * 
+                    *
                     * At the moment, None means that there is no referer url to use - we'll use the musicrest one
                     * otherwise for Some(url) we use a confirmation email with a url to the reference we're supplied with
-                    * 
+                    *
                     */
                    e <- Email.sendRegistrationMessage(u, doRegister, refererUrl).disjunction
-                   } yield u    
+                   } yield u
                  vu.validation
                  }
-               } 
+               }
              }
             }
           }
-        } ~ 
+        } ~
         // list of users
         parameters('page ? 1, 'size ? MusicRestSettings.defaultPageSize) { (page, size) =>
-          get {  
-            authenticate(BasicAuth(AdminAuthenticator, "musicrest")) { user =>   
+          get {
+            authenticate(BasicAuth(AdminAuthenticator, "musicrest")) { user =>
               val userList = UserList(page, size)
-              val totalPages = (userList.totalResults + size - 1) / size 
+              val totalPages = (userList.totalResults + size - 1) / size
               respondWithHeader(paginationHeader(page, totalPages)) {
-               ctx => ctx.complete(userList) 
+                corsFilter(MusicRestSettings.corsOrigins) {
+                  ctx => ctx.complete(userList)
+                }
               }
             }
           }
-        }        
+        }
       }~
       // validate a user (i.e. after he's responded to an email)
-      path ("user" / "validate" / Segment ) { uuid => 
+      path ("user" / "validate" / Segment ) { uuid =>
         get {
           ctx => {
             // debugRequestHeaders(ctx)
             ctx.complete {
               User.validate(uuid)
-            }    
+            }
           }
-        }            
+        }
       }~
       // reset the password for a user
-      path("user" / "password" / "reset") { 
-        authenticate(BasicAuth(UserAuthenticator, "musicrest")) { user =>      
+      path("user" / "password" / "reset") {
+        authenticate(BasicAuth(UserAuthenticator, "musicrest")) { user =>
           post {
-            formFields('password) { password =>  
+            formFields('password) { password =>
               complete {
                 User.alterPassword(user.username, password)
               }
             }
           }
         }
-      }~    
+      }~
       // resend the password for a user
-      path("user" / "password" / "resend") { 
-        post { 
-          formFields('name) { (name) =>     
+      path("user" / "password" / "resend") {
+        post {
+          formFields('name) { (name) =>
             complete {
-              val vun = 
+              val vun =
                 for {
                   ur <- User.get(name).disjunction
                   e <- Email.sendPasswordMessage(ur).disjunction
-                } yield ur.name     
+                } yield ur.name
                 vun.validation
              }
            }
          }
-      } ~     
-      // check a user login 
-      path ("user" / "check" ) {  
-        get {     
-          authenticate(BasicAuth(UserAuthenticator, "musicrest")) { user =>    
-            _.complete("user is valid")    
+      } ~
+      // check a user login
+      path ("user" / "check" ) {
+        get {
+          authenticate(BasicAuth(UserAuthenticator, "musicrest")) { user =>
+            _.complete("user is valid")
           }
-        } 
+        }
       } ~
       // some user maintenance functions
       // delete user
-      path ("user" / Segment ) {  uname => 
-        delete {     
-          authenticate(BasicAuth(AdminAuthenticator, "musicrest")) { user =>   
+      path ("user" / Segment ) {  uname =>
+        delete {
+          authenticate(BasicAuth(AdminAuthenticator, "musicrest")) { user =>
             val name = java.net.URLDecoder.decode(uname, "UTF-8")
             complete {
               User.deleteUser(name)
             }
           }
-        } 
-      } 
+        }
+      }
     }
-  
 
-  
+
+
   /* overall route */
-  val musicRestRoute =   
-    handleExceptions(myExceptionHandler) { 
+  val musicRestRoute =
+    handleExceptions(myExceptionHandler) {
       logRequestResponse(rrlogger) {
-        tuneRoute ~ commentsRoute ~ userRoute 
+        tuneRoute ~ commentsRoute ~ userRoute
       }
   }
 
-  def paginationHeader(page: Int, totalPages: Long) : HttpHeaders.RawHeader = 
+  def paginationHeader(page: Int, totalPages: Long) : HttpHeaders.RawHeader =
        HttpHeaders.RawHeader("Musicrest-Pagination", "[" + page + " of " + totalPages + "]")
 
   /** return the content type from the file type (taken originally from the request URL) */
   private def getContentTypeFromFileType(fileType:String): Option[ContentType] = {
     val supportedTypes: Map[String, ContentType] = Map( "png" -> ContentType(`image/png`),
-                                                        "pdf" -> ContentType(`application/pdf`), 
-                                                        "midi" -> ContentType(`audio/midi`), 
+                                                        "pdf" -> ContentType(`application/pdf`),
+                                                        "midi" -> ContentType(`audio/midi`),
                                                         "ps" -> ContentType(`application/postscript`) )
-     supportedTypes.get(fileType)    
-  } 
+     supportedTypes.get(fileType)
+  }
 
-  def debugMessage(text: String) = 
+  def debugMessage(text: String) =
             <html>
               <body>
                 <h1>{text}</h1>
@@ -610,11 +621,11 @@ trait MusicRestService extends HttpService with CORSDirectives {
             </html>
 
   /** establish the genres and their rhythms */
-  def establishGenres(implicit log: LoggingContext) =  {    
+  def establishGenres(implicit log: LoggingContext) =  {
     supportedGenres.createGenreSubdirectories()
     log.info(s"genres: ${supportedGenres.rhythmMap}")
   }
-  
+
   /* return true if the logged-in user is the administrator or the owner of a resource */
   def isOwnerOrAdministrator(owner: String, user : String): Boolean =
     (owner, user) match {
@@ -622,10 +633,10 @@ trait MusicRestService extends HttpService with CORSDirectives {
        case (o, u) => o == u
        case _ => false
   }
-  
- 
+
+
   /** directive for extracting the logged in user name */
-  val userName = optionalHeaderValue { 
+  val userName = optionalHeaderValue {
       case Authorization(BasicHttpCredentials(user, _)) =>  {
         logger.info(s"new user: $user is the logged in user")
         Some(user)
@@ -634,10 +645,10 @@ trait MusicRestService extends HttpService with CORSDirectives {
         logger.info("new user: no user logged in")
         None
       }
-  } 
-      
-        
-        
-   
+  }
+
+
+
+
 
 }
