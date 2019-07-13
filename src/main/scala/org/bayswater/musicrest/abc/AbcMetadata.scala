@@ -41,9 +41,9 @@ case class AbcMongo(titles: List[String], kvs: scala.collection.Map[String,Strin
 /** a binary image of a transcoded ABC tune */
 case class BinaryImage(mediaType: MediaType, stream: BufferedInputStream)
 
-class Abc(val titles: List[String], rhythm: String, headers: scala.collection.Map[String, String], 
+class Abc(val titles: List[String], rhythm: String, headers: scala.collection.Map[String, String],
           abcDirectives: Option[String], abcHeaders: String, abcBody:String, genre: String)  {
-  
+
     // println(s"ABC titles $titles")
     val name = titles.head
     val tuneType = rhythm
@@ -52,60 +52,60 @@ class Abc(val titles: List[String], rhythm: String, headers: scala.collection.Ma
     val safeFileName = id.filter(_.isLetterOrDigit)
     val submitter = headers.get("submitter")
     val abc = abcDirectives.getOrElse("") + abcHeaders + abcBody
-    
+
     /** an option to stamp the ABC with an S header containing its musicrest URI */
     def abcWithSHeader = {
       val newHeaders =
         if (!headers.contains("S")) {
-           abcHeaders + "S: " + TuneRef.formatUri(genre, id) + "\n"  
+           abcHeaders + "S: " + TuneRef.formatUri(genre, id) + "\n"
         }
         else {
            abcHeaders
         }
       abcDirectives.getOrElse("") + newHeaders + abcBody
     }
-   
+
 
     def key:Option[String] = headers.get("K")
     def noteLength:Option[String] = headers.get("L")
     def timeSignature:Option[String] = headers.get("M")
     def author:Option[String] = headers.get("Z")
-    def tuneIndex:Option[String] = headers.get("X") 
-    def source:Option[String] = headers.get("S") 
+    def tuneIndex:Option[String] = headers.get("X")
+    def source:Option[String] = headers.get("S")
     def alternativeTitles = titles.tail
-    
-  
+
+
     // for binary media types (pdf, ps, midi, png)
-    def to(mediaType:MediaType): Validation[String, BinaryImage] = Transcoder.transcode(safeFileName, mediaType, genre,  abc.lines)   
-    
+    def to(mediaType:MediaType): Validation[String, BinaryImage] = Transcoder.transcode(safeFileName, mediaType, genre,  abc.lines)
+
     /** experimental for binary media types (pdf, ps, midi, png) */
     def toFutureBinary(mediaType:MediaType) (implicit executor: ExecutionContext) : Future[Validation[String, BinaryImage]] = Future {
-      Transcoder.transcode(safeFileName, mediaType, genre, abc.lines)  
+      Transcoder.transcode(safeFileName, mediaType, genre, abc.lines)
     }
-    
-       
+
+
     /* for streamed media types (wav)
-     * 
+     *
      * I have chosen not to support integer values for the instruments (see http://ifdo.pugmarks.com/~seymour/runabc/abcguide/abc2midi_guide.html)
      * in favour of explicitly naming those I wish to support.  This is because some don't render at all, some are ridiculous (e.g. helicopter) and
      * some just sound dreadful and nothing like their intended target.
      */
     def toFile(mediaType:MediaType, instrument: String, transpose: Int, tempo: String): Validation[String, File] = {
-      val midiInstruments: Map[String, Int] = Map( "piano" -> 1, 
+      val midiInstruments: Map[String, Int] = Map( "piano" -> 1,
                                                    "harpsichord" -> 6,
                                                    "accordion" -> 21,
                                                    "cello" -> 42,
                                                    "clarinet" -> 71,
                                                    "dulcimer" -> 15,
                                                    "flute" -> 74,
-                                                   "guitar" -> 26,  
+                                                   "guitar" -> 26,
                                                    "harp" -> 46,
                                                    "bandoneon" -> 23)
-                       
+
       val midiProcess = midiInstruments.getOrElse(instrument, 1)
-      Transcoder.transcodeStream(safeFileName, genre, mediaType.subType,  abcHeaders, abcBody, midiProcess, instrument, transpose, tempo)  
+      Transcoder.transcodeStream(safeFileName, genre, mediaType.subType,  abcHeaders, abcBody, midiProcess, instrument, transpose, tempo)
     }
-    
+
      /* supports plain text, json and xml at the moment */
     def toStr(mediaType:MediaType): Validation[String, String] = {
       val formatExtension:String = mediaType.subType
@@ -118,8 +118,8 @@ class Abc(val titles: List[String], rhythm: String, headers: scala.collection.Ma
           case "vnd.abc" =>  abcWithSHeader.success
           case _ => ("Unsupported media type: " + formatExtension).failure[String]
         }
-    }  
-    
+    }
+
     def toHTML: String = (abc + submitter.map(x => s"\nsubmitted by $x\n").getOrElse("")).foldLeft("")((b, c) => c match {
       case '<' => b + "&lt;"
       case '>' => b + "&gt;"
@@ -127,10 +127,10 @@ class Abc(val titles: List[String], rhythm: String, headers: scala.collection.Ma
       case x => b + x
       }
     )
-    
+
     /** build a mongo-friendly version of the ABC notation */
-    def toAbcMongo: AbcMongo = AbcMongo(titles, toMap, genre)      
-    
+    def toAbcMongo: AbcMongo = AbcMongo(titles, toMap, genre)
+
     /** map includes everything except the titles */
     private def toMap: Map[String, String] = {
       val mb = new MapBuilder[String, String, Map[String,String]](Map.empty)
@@ -141,9 +141,11 @@ class Abc(val titles: List[String], rhythm: String, headers: scala.collection.Ma
       abcDirectives.foreach(d => mb += "abcDirectives" -> d)
       mb.result
     }
-    
-    def toJSON: String = {        
-     
+
+    def toJSON: String = {
+
+        println("<<< Abc.toJson >>>")
+
         val sb = new StringBuilder()
         val encodedHeaders = for ( (key, value) <- headers ) yield ("     " + formatJSON(key, value))
         sb.append("{\n")
@@ -155,8 +157,8 @@ class Abc(val titles: List[String], rhythm: String, headers: scala.collection.Ma
         sb.append("\n}\n")
         // println(sb.toString())
         sb.toString
-    }      
-    
+    }
+
 
     // not used at the moment - just done as a db update - but used in tests
     def addAlternativeTitle(title: String) : Validation[String, Abc] = {
@@ -174,48 +176,48 @@ class Abc(val titles: List[String], rhythm: String, headers: scala.collection.Ma
         abc.success
       }
     }
-   
-    def createTemporaryImageFile(): Validation[String, String] = Transcoder.createTemporaryImageFile(safeFileName, genre, abc.lines)   
-    
-   
+
+    def createTemporaryImageFile(): Validation[String, String] = Transcoder.createTemporaryImageFile(safeFileName, genre, abc.lines)
+
+
     private def toXML: String  = {
       val jvalue = JsonParser.parse(toJSON)
       "<tune>" + Xml.toXml(jvalue).toString + "</tune>"
     }
 
 
-    
-    private def enQuote(s:String): String = "\"" + s + "\""    
-    
+
+    private def enQuote(s:String): String = "\"" + s + "\""
+
     /* insert the tune if it's new.  Deprecated in favour of upsert.
      * Only used in BulkImport.
      */
-    def insertIfNew(genre: String): Validation[String, TuneRef] = 
-      if (TuneModel().exists(genre, id)) {        
+    def insertIfNew(genre: String): Validation[String, TuneRef] =
+      if (TuneModel().exists(genre, id)) {
         ("Tune: " + id + " already exists").failure[TuneRef]
-      } 
+      }
       else {
         TuneModel().insert(genre, this) map ( t => (TuneRef(name, tuneType, id)))
-      }    
-    
+      }
+
     /** upsert:
-     *  
+     *
      *  If the tune does not exist, insert it
      *  If it does exist, and the submitter is identical to the original one, replace it  (i.e. allow updates)
      *  otherwise raise a 'tune already exists' error
      */
     def upsert(genre: String): Validation[String, TuneRef] = {
       val optOldRef = TuneModel().getTuneRef(genre, id)
-      
+
       optOldRef match {
         case None => TuneModel().insert(genre, this) map ( t => (TuneRef(name, tuneType, id)))
         case Some(originalId) => {
           val oldSubmitter = TuneModel().getSubmitter(genre, id)
-          
+
           if (submitter.isDefined) {
             val oldSubmitterName = oldSubmitter.getOrElse("none")
             val newSubmitterName = submitter.getOrElse("none")
-            
+
             if (newSubmitterName === oldSubmitterName) {
               // println(s"REPLACE - old submitter: ${oldSubmitterName} new submitter: ${newSubmitterName}")
               // delete old setting of the tune from the file system cache
@@ -233,21 +235,21 @@ class Abc(val titles: List[String], rhythm: String, headers: scala.collection.Ma
         }
       }
     }
-    
-    def validTuneRef(genre: String): Validation[String, TuneRef] = (TuneRef(name, tuneType, id)).success 
-   
+
+    def validTuneRef(genre: String): Validation[String, TuneRef] = (TuneRef(name, tuneType, id)).success
+
 }
 
 object Abc {
     // build from an ABC submission (i.e. supplied from an HTML form)
-    
-    def apply (titles: List[String], rhythm: String, headers: collection.mutable.HashMap[String, String], 
-              abcDirectives: Option[String], abcHeaders:String, abcBody:String, genre: String): Abc = 
+
+    def apply (titles: List[String], rhythm: String, headers: collection.mutable.HashMap[String, String],
+              abcDirectives: Option[String], abcHeaders:String, abcBody:String, genre: String): Abc =
       new Abc (titles, rhythm, headers, abcDirectives, abcHeaders, abcBody, genre)
-    
+
     // build from a mongo-friendly representation of the tune (this will eventually supersede the method below)
     def apply(abcMongo: AbcMongo): Abc = {
-      val titles = abcMongo.titles      
+      val titles = abcMongo.titles
       val genre = abcMongo.genre
       val rhythm:String = abcMongo.kvs.get("R").getOrElse("rhythmless")
       val abcDirectives:Option[String] = abcMongo.kvs.get("abcDirectives")
@@ -256,24 +258,24 @@ object Abc {
       val headers: scala.collection.Map[String, String] = abcMongo.kvs.filter( (kv) => ! List("abc", "abcHeaders", "abcDirectives").contains(kv._1)   )
       new Abc(titles, rhythm, headers, abcDirectives, abcHeaders, abcBody, genre)
     }
-    
+
 
     // build a (presumed valid) tune from the BSON-provided map
     def validTune(requestedTune: Tune, optMap: Option[AbcMongo]): Validation[String, Abc] = optMap match {
       case None => (s"Not Found: $requestedTune").failure[Abc]
       case Some(m) => apply(m).success
-    }    
-    
+    }
+
     // add an alternative title to the tune
     def addAlternativeTitle(genre: String, id: String, title: String) : Validation[String, TuneRef] = {
-      val response = TuneModel().addAlternativeTitle(genre, id, title) 
-      response.map(t => 
+      val response = TuneModel().addAlternativeTitle(genre, id, title)
+      response.map(t =>
          { val tuneId = TuneId(id)
            TuneRef(tuneId.name, tuneId.rhythm, id)
          })
     }
 
-  
+
 }
 
 
@@ -283,7 +285,7 @@ object Abc {
  * @param abcHeaders the headers represented as a simple string from the original ABC
  * @param abcDirectives (abc directives - rare)
  * @param abcBody the rest of the ABC other than the headers and directives)
- * @param abcCount try to keepm tabs on the number of tunes in the ABC - should always be 1 
+ * @param abcCount try to keepm tabs on the number of tunes in the ABC - should always be 1
  */
 
 class AbcSubmission (genre: String,
@@ -293,18 +295,18 @@ class AbcSubmission (genre: String,
                      abcDirectives: Option[String],
                      abcBody: String,
                      abcCount: Int
-                     ) {   
-    // def title:Option[String] = headers.get("T")     
+                     ) {
+    // def title:Option[String] = headers.get("T")
     // this is misleading - we don't have or use _id at this stage
-    // def id:Option[String] = headers.get("_id") 
+    // def id:Option[String] = headers.get("_id")
     def tuneIndex:Option[String] = headers.get("X")
     def tuneKey:Option[String] = headers.get("K")
     def rhythm:Option[String] = headers.get("R")
-    
+
     private def checkIndex() : \/[String, AbcSubmission] = tuneIndex match {
       case None => "no tune index".left
       case Some(i) => if (i == "1") this.right else ("Invalid index: " + i).left
-    } 
+    }
 
     private def checkKeySignature() : \/[String, AbcSubmission] = tuneKey match {
 
@@ -328,15 +330,15 @@ class AbcSubmission (genre: String,
         }
       }
     }
-    
+
 
     private def checkCount() : \/[String, AbcSubmission] = abcCount match {
       case 0 => "No tunes present in abc".left
       case c => if (c == 1) this.right else ("More than one tune supplied: " + c).left
     }
- 
 
-    private def checkTitles() : \/[String, List[String]] = 
+
+    private def checkTitles() : \/[String, List[String]] =
       if (titles.isEmpty) {
         "No title (T header) present in abc".left
       }
@@ -349,22 +351,22 @@ class AbcSubmission (genre: String,
         }
         else {
           titles.toList.right
-        }          
+        }
       }
 
-   
+
     private def checkRhythm() : \/[String, String] = rhythm match {
       case None => "No rhythm (R header) present in abc".left
       case Some(r) => {
           if (SupportedGenres.isRhythm(genre, r.toLowerCase()))
             r.right
-          else 
+          else
             (r + " is not a recognized rhythm for the " + genre + " genre").left
       }
-    }        
+    }
 
-    def validate() : Validation[String, Abc] = 
-      (for 
+    def validate() : Validation[String, Abc] =
+      (for
         {
          t <- checkTitles
          r <- checkRhythm
@@ -377,7 +379,7 @@ class AbcSubmission (genre: String,
 
 
 object AbcSubmission {
-  
+
     def apply (lines: Iterator[String], genre: String, submitter: String): AbcSubmission = {
       // this should match %%
       val directiveExtractor = """^(%%)(.*)""".r
@@ -387,20 +389,20 @@ object AbcSubmission {
       val indexExtractor = """^(X):(.*)""".r
       val sourceExtractor = """^(S):(.*)""".r
       val headerExtractor = """^([a-zA-Z]{1}):(.*)""".r
-      val sbDirectives = new StringBuilder()  
-      val sbHeaders = new StringBuilder()  
+      val sbDirectives = new StringBuilder()
+      val sbHeaders = new StringBuilder()
       val sbBody = new StringBuilder()
 
-      val headers = collection.mutable.HashMap[String, String]() 
+      val headers = collection.mutable.HashMap[String, String]()
       val titles = scala.collection.mutable.ListBuffer[String]()
       var abcCount = 0
       var headerMode = true
 
-      lines.foreach{ line => {        
+      lines.foreach{ line => {
         val cleanLine = replaceDoubleQuotes(line)
-        
+
         cleanLine match {
-          case directiveExtractor(dname, dvalue) => {   
+          case directiveExtractor(dname, dvalue) => {
             // println("Got Directive: " + dvalue)
             sbDirectives.append(cleanLine + "\n")
           }
@@ -413,7 +415,7 @@ object AbcSubmission {
           case tuneKeyExtractor(hname, hvalue) => {
             // normalise major and minor key representations
             val kvalue = hvalue.trim()
-            val tuneKey = 
+            val tuneKey =
                if (List("A", "B", "C", "D", "E", "F", "G").contains(kvalue))
                  kvalue + "maj"
                else if (List("Am", "Bm", "Cm", "Dm", "Em", "Fm", "Gm").contains(kvalue))
@@ -426,7 +428,7 @@ object AbcSubmission {
               sbHeaders.append("K:" + tuneKey + "\n")
               // println("set header rhythm to " + tuneKey)
               }
-            else {              
+            else {
               sbBody.append("K:" + tuneKey + "\n")
               // println("set body rhythm to " + tuneKey)
               }
@@ -461,19 +463,19 @@ object AbcSubmission {
       // add a timestamp
       headers += ("ts" -> System.currentTimeMillis().toString)
       // add the identity of the submitter
-      headers += ("submitter" -> submitter)  
-      val directives = 
+      headers += ("submitter" -> submitter)
+      val directives =
          if (sbDirectives.length() > 0) {
            Some(sbDirectives.toString)
          }
          else None
-         
+
       // println(s"ABC submission titles: $titles")
       new AbcSubmission(genre, titles, headers, sbHeaders.toString, directives, sbBody.toString, abcCount)
-    }      
-    
-    // JSON doesn't allow embedded double quotes so we'll replace with single quotes 
-    def replaceDoubleQuotes(s:String): String = s.foldLeft("")((b, a) => if (a == '"') b + ''' else b + a ) 
-   
+    }
+
+    // JSON doesn't allow embedded double quotes so we'll replace with single quotes
+    def replaceDoubleQuotes(s:String): String = s.foldLeft("")((b, a) => if (a == '"') b + ''' else b + a )
+
 
 }

@@ -46,10 +46,10 @@ class ContentNegotiationSpec extends RoutingSpec with MusicRestService {
         responseAs[String] must contain("M: 4/4")
       }
     }
-    
+
     "return text/vnd.abc content when requested for tunes of this type" in {
       Get("/musicrest/genre/irish/tune/noon+lasses-reel") ~> addHeader("Accept", "text/vnd.abc")  ~> musicRestRoute ~> check {
-        mediaType === AbcType        
+        mediaType === AbcType
         responseAs[String] must contain("T: Noon Lasses")
         responseAs[String] must contain("M: 4/4")
       }
@@ -60,11 +60,12 @@ class ContentNegotiationSpec extends RoutingSpec with MusicRestService {
         mediaType === MediaTypes.`text/xml`
         responseAs[String] must contain("<T>Noon Lasses</T>")
       }
-    }   
+    }
 
    "return application/json content when requested for tunes of this type" in {
       Get("/musicrest/genre/irish/tune/speed+the+plough-reel") ~> addHeader("Accept", "application/json")  ~> musicRestRoute ~> check {
         mediaType === MediaTypes.`application/json`
+        println(s"JSON Tune ${responseAs[String]}")
         responseAs[String] must contain("""T": "Speed The Plough""")
       }
     }
@@ -85,7 +86,7 @@ class ContentNegotiationSpec extends RoutingSpec with MusicRestService {
       Get("/musicrest/genre/irish/tune/noon+lasses-reel") ~> addHeader("Accept", "image/png")  ~> musicRestRoute ~> check {
         mediaType === MediaTypes.`image/png`
       }
-    }   
+    }
 
     /* Note, as of this version of Spray, this will raise a Spray exception which is caught by Spray */
    /*
@@ -94,53 +95,53 @@ class ContentNegotiationSpec extends RoutingSpec with MusicRestService {
         mediaType === MediaTypes.`text/plain`
       }
     }
-    * 
+    *
     */
-    
+
    /* Genre Rhythm Lists */
    "return text/xml content when requested for a genre list of this type" in {
       Get("/musicrest/genre/scandi") ~> addHeader("Accept", "text/xml")  ~> sealRoute(musicRestRoute) ~> check {
         mediaType === MediaTypes.`text/xml`
         responseAs[String] must contain("<rhythm>polska</rhythm>")
       }
-    }      
-   
+    }
+
     "return application/json content when requested for a genre list of this type" in {
       Get("/musicrest/genre/scandi") ~> addHeader("Accept", "application/json")  ~> musicRestRoute ~> check {
         mediaType === MediaTypes.`application/json`
         responseAs[String] must contain("""{ "rhythm" :[""")
       }
-    }  
-    
+    }
+
   "return text/html content when requested for a genre list of this type" in {
       Get("/musicrest/genre/scandi") ~> addHeader("Accept", "text/html")  ~> musicRestRoute ~> check {
         mediaType === MediaTypes.`text/html`
         responseAs[String] must contain("<p>polska")
       }
-    }          
-  
+    }
+
    /* Genre Lists */
    "return text/xml content when requested for a genre list of this type" in {
       Get("/musicrest/genre") ~> addHeader("Accept", "text/xml")  ~> musicRestRoute ~> check {
         mediaType === MediaTypes.`text/xml`
         responseAs[String] must contain("<genre>scandi</genre>")
       }
-    }      
-   
+    }
+
     "return application/json content when requested for a genre list of this type" in {
       Get("/musicrest/genre") ~> addHeader("Accept", "application/json")  ~> musicRestRoute ~> check {
         mediaType === MediaTypes.`application/json`
         responseAs[String] must contain("""["scottish","scandi","irish","klezmer"]""")
       }
-    }  
-    
+    }
+
   "return text/html content when requested for a genre list of this type" in {
       Get("/musicrest/genre") ~> addHeader("Accept", "text/html")  ~> musicRestRoute ~> check {
         mediaType === MediaTypes.`text/html`
         responseAs[String] must contain("<p>scandi")
       }
-    }          
-  
+    }
+
    /* Tune Lists */
    "return text/xml content when requested for a tune list of this type" in {
       Get("/musicrest/genre/irish/tune") ~> addHeader("Accept", "text/xml")  ~> musicRestRoute ~> check {
@@ -150,17 +151,18 @@ class ContentNegotiationSpec extends RoutingSpec with MusicRestService {
         responseAs[String] must contain("""<pagination><page>1</page><size>10</size></pagination>""")
         checkPaginationHeader(header("Musicrest-Pagination"))
       }
-    }      
-   
+    }
+
     "return application/json content when requested for a tune list of this type" in {
       Get("/musicrest/genre/irish/tune") ~> addHeader("Accept", "application/json")  ~> musicRestRoute ~> check {
         mediaType === MediaTypes.`application/json`
+        // println(s"JSON Tune List ${responseAs[String]}")
         responseAs[String] must contain(""""uri": "noon+lasses-reel"""")
         responseAs[String] must contain(""" "pagination" : """)
         checkPaginationHeader(header("Musicrest-Pagination"))
       }
-    }  
-    
+    }
+
   "return text/html content when requested for a tune list of this type" in {
       Get("/musicrest/genre/irish/tune") ~> addHeader("Accept", "text/html")  ~> musicRestRoute ~> check {
         mediaType === MediaTypes.`text/html`
@@ -168,8 +170,8 @@ class ContentNegotiationSpec extends RoutingSpec with MusicRestService {
         responseAs[String] must contain("""<span class="tunelist" page="1" size="10" >""")
         checkPaginationHeader(header("Musicrest-Pagination"))
       }
-    }    
-  
+    }
+
     /* User Lists */
    "return text/xml content when requested for a user list of this type" in {
       Get("/musicrest/user") ~> addHeader("Accept", "text/xml") ~> Authorization(BasicHttpCredentials("administrator", "adm1n1str80r")) ~> musicRestRoute ~> check {
@@ -177,35 +179,35 @@ class ContentNegotiationSpec extends RoutingSpec with MusicRestService {
         responseAs[String] must contain("<name>administrator</name>")
         checkPaginationHeader(header("Musicrest-Pagination"))
       }
-    }   
-   
+    }
+
     "return application/json content when requested for a user list of this type" in {
       Get("/musicrest/user") ~> addHeader("Accept", "application/json")  ~> Authorization(BasicHttpCredentials("administrator", "adm1n1str80r")) ~> musicRestRoute ~> check {
         mediaType === MediaTypes.`application/json`
         responseAs[String] must contain(""""name": "administrator" """)
         checkPaginationHeader(header("Musicrest-Pagination"))
       }
-    }  
-    
-   
+    }
+
+
   "return text/html content when requested for a user list of this type" in {
       Get("/musicrest/user") ~> addHeader("Accept", "text/html")  ~> Authorization(BasicHttpCredentials("administrator", "adm1n1str80r")) ~> musicRestRoute ~> check {
         mediaType === MediaTypes.`text/html`
         responseAs[String] must contain("<td>administrator</td>")
         checkPaginationHeader(header("Musicrest-Pagination"))
       }
-    } 
+    }
 
   }
-  
+
   def checkPaginationHeader(h: Option[spray.http.HttpHeader]): Boolean = h match {
     case None => validationFailure("No pagination header")
     case Some(h) => h.value must contain ("1 of 1")
-  }  
+  }
 
   // this is a hack to get the types to match up - must find out how to do it properly
   def validationFailure (msg: String) =
-     msg must_== "true"  
+     msg must_== "true"
 
   def insertTunes = {
    val dbName = "tunedbtest"
@@ -213,19 +215,15 @@ class ContentNegotiationSpec extends RoutingSpec with MusicRestService {
    val genre = "irish"
    tuneModel.delete(genre)
    val validNoonLasses = abcFor(genre, noonLasses)
-   validNoonLasses.fold(e => println("unexpected error in test data: " + e), s => s.upsert("irish"))  
+   validNoonLasses.fold(e => println("unexpected error in test data: " + e), s => s.upsert("irish"))
    val validSpeedThePlough = abcFor(genre, speedThePlough)
-   validSpeedThePlough.fold(e => println("unexpected error in test data: " + e), s => s.upsert("irish"))  
+   validSpeedThePlough.fold(e => println("unexpected error in test data: " + e), s => s.upsert("irish"))
   }
-  
+
   def clearTuneCache = {
     val cacheDir = new java.io.File("cache/test")
     clearCache(cacheDir, 0)
   }
-  
-  
+
+
 }
-
-
-
-
