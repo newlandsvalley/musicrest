@@ -572,8 +572,17 @@ trait MusicRestService extends HttpService with CORSDirectives {
       // check a user login
       path ("user" / "check" ) {
         get {
-          authenticate(BasicAuth(UserAuthenticator, "musicrest")) { user =>
-            _.complete("user is valid")
+          corsFilter(MusicRestSettings.corsOrigins) {
+            authenticate(BasicAuth(UserAuthenticator, "musicrest")) { user =>
+              _.complete("user is valid")
+            }
+          }
+        } ~
+        options {
+          corsOptionsFilter(MusicRestSettings.corsOrigins) {
+            _.complete {
+              "options".success
+            }
           }
         }
       } ~
