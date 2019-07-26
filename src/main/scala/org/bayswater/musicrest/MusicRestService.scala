@@ -152,19 +152,21 @@ trait MusicRestService extends HttpService with CORSDirectives {
         post {
           authenticate(BasicAuth(UserAuthenticator, "musicrest")) { user =>
             entity(as[AbcPost]) { post =>
-              complete {
-                val abcSubmission = AbcSubmission(post.notes.lines, genre, user.username)
-                val validAbc:Validation[String, Abc] = abcSubmission.validate
-                // response:\/[String, TuneRef] =
-                val response =
-                  for {
-                    g <- GenreList.validate(genre).disjunction
-                    abc <- validAbc.disjunction
-                    // we will try to transcode immediately to png which might cause further errors
-                    t <- abc.to(`image/png`).disjunction
-                    success <- abc.upsert(genre).disjunction
-                  } yield success
-                response.validation
+              corsFilter(MusicRestSettings.corsOrigins) {
+                complete {
+                  val abcSubmission = AbcSubmission(post.notes.lines, genre, user.username)
+                  val validAbc:Validation[String, Abc] = abcSubmission.validate
+                  // response:\/[String, TuneRef] =
+                  val response =
+                    for {
+                      g <- GenreList.validate(genre).disjunction
+                      abc <- validAbc.disjunction
+                      // we will try to transcode immediately to png which might cause further errors
+                      t <- abc.to(`image/png`).disjunction
+                      success <- abc.upsert(genre).disjunction
+                    } yield success
+                  response.validation
+                }
               }
             }
           }
@@ -180,6 +182,13 @@ trait MusicRestService extends HttpService with CORSDirectives {
                 }
               }
             }
+        } ~
+        options {
+          corsOptionsFilter(MusicRestSettings.corsOrigins) {
+            _.complete {
+              "options".success
+            }
+          }
         }
       } ~
       path(Segment / "tune" / Segment) { (genre, tuneEncoded) =>
