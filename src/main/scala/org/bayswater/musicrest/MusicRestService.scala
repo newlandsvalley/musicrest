@@ -440,6 +440,13 @@ trait MusicRestService extends HttpService with CORSDirectives {
               }  }
             }
           }
+        } ~
+        options {
+          corsOptionsFilter(MusicRestSettings.corsOrigins) {
+            _.complete {
+              "options".success
+            }
+          }
         }
       } } ~
       path(Segment / "tune" / Segment / "comment" / Segment / Segment ) { (genre, tuneEncoded, submitterEncoded, timestamp) =>  {
@@ -527,6 +534,13 @@ trait MusicRestService extends HttpService with CORSDirectives {
                   ctx => ctx.complete(userList)
                 }
               }
+            }
+          }
+        }~
+        options {
+          corsOptionsFilter(MusicRestSettings.corsOrigins) {
+            _.complete {
+              "options".success
             }
           }
         }
