@@ -11,12 +11,14 @@ trait CORSDirectives  { this: HttpService =>
   private def respondWithCORSHeaders(origin: String) =
     respondWithHeaders(
       HttpHeaders.`Access-Control-Allow-Origin`(SomeOrigins(List(origin))),
-      HttpHeaders.`Access-Control-Allow-Credentials`(true)
+      HttpHeaders.`Access-Control-Allow-Credentials`(true),
+      HttpHeaders.`Access-Control-Expose-Headers`(List ("Musicrest-Pagination"))
     )
   private def respondWithCORSHeadersAllOrigins =
     respondWithHeaders(
       HttpHeaders.`Access-Control-Allow-Origin`(AllOrigins),
-      HttpHeaders.`Access-Control-Allow-Credentials`(true)
+      HttpHeaders.`Access-Control-Allow-Credentials`(true),
+      HttpHeaders.`Access-Control-Expose-Headers`(List ("Musicrest-Pagination"))
     )
   private def respondWithCORSOptionsHeaders(origin: String) =
     respondWithHeaders(
