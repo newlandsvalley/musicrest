@@ -66,18 +66,32 @@ class MusicServiceActor extends Actor with MusicRestService {
  *  error text.  So instead, we wrap our routes in our own exception handler which builds a more
  *  comprehensible HTTP status message.
  *
+ *  It is particularly awkward because we need to protect with CORS headers
+ *  even though we don't know the route.  We'll allow any JS client to
+ *  see the error page.
  */
 object MusicRestService {
   import spray.http.StatusCodes.BadRequest
 
+  import directives.RespondWithDirectives._
+
   case class MusicRestException(message: String) extends RuntimeException(message, null)
+
+  private def respondWithCORSHeaders =
+    respondWithHeaders(
+      HttpHeaders.`Access-Control-Allow-Origin`(AllOrigins),
+      HttpHeaders.`Access-Control-Allow-Credentials`(true)
+    )
 
   implicit def myExceptionHandler(implicit log: LoggingContext) =
     ExceptionHandler {
-      case e: MusicRestException => ctx =>
-        log.info(s"Error processing request: ${e.getMessage} ${ctx.request}")
-        // frame the message so we can distinguish our text from HTTPP's
-        ctx.complete(BadRequest, e.getMessage)
+      case e: MusicRestException =>
+        respondWithCORSHeaders {
+          ctx =>
+            log.info(s"Error processing request: ${e.getMessage} ${ctx.request}")
+            // frame the message so we can distinguish our text from HTTPP's
+            ctx.complete(BadRequest, e.getMessage)
+        }
   }
 }
 
@@ -104,7 +118,7 @@ trait MusicRestService extends HttpService with CORSDirectives {
    *
    * a route that deal with genres and tunes in their various guises
    *
-   * overall route is musicRestRoute = tuneRoute ~ userRoute
+   * overall route is musicRestRoute = tuneRoute ~ commentsRoute ~ userRoute
    */
   val tuneRoute =
     pathPrefix("musicrest") {
