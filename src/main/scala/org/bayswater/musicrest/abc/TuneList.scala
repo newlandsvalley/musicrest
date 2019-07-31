@@ -24,9 +24,9 @@ import org.bayswater.musicrest.model.TuneModel
 case class TuneId(name: String, rhythm: String)
 
 object TuneId {
-  
+
   def apply(id: String): TuneId = parseId(id)
-  
+
   /** a tune id is of the form "name-genre".
    *  Separate this into its components and return as a TuneId
    */
@@ -34,31 +34,41 @@ object TuneId {
     val hyphenPos = id.lastIndexOf('-')
     hyphenPos match {
       case -1 => TuneId(id, "unknown")
-      case n  => TuneId(id.slice(0,n), id.slice(n+1, id.length)) 
+      case n  => TuneId(id.slice(0,n), id.slice(n+1, id.length))
     }
   }
 }
 
-/** A List of tunes, each of which is indicated by a TuneRef */
+/** A List of tunes, each of which is indexed by a TuneRef
+    different return formats have different fields
+*/
 class TuneList(i: Iterator[scala.collection.Map[String, String]], genre: String, searchParams: Map[String, String], page: Int, size: Int) {
- 
+
+
+  /** Return tuneId, timestamp, abcHeaders and abc (body)
+      This is what the PureScript tunebank-frontend uses which allows
+      thumbnails can be created
+  */
   def toJSON: String = {
     val quotedi = i.map( cols => cols.map( c => c match {
       case (TuneModel.tuneKey, x) => TuneRef.formatId(x)
       case (a, b)     => TuneRef.formatJSON(a, b)
     }).mkString("{", ",", "}"))
-    quotedi.mkString("{ \"tune\": [", ",", "], " + pageInfoJSON + "  }") 
-  }  
-  
+    quotedi.mkString("{ \"tune\": [", ",", "], " + pageInfoJSON + "  }")
+  }
+
   /** return the tune list as a set of li items (not used) */
   def toHTMLList: String = {
     val quotedi = i.map( cols => buildHtmlLi(cols) )
     val prefix = "<span class=\"tunelist\" " + pageInfoHTML+ ">\n"
     val suffix = "</span>"
-    quotedi.mkString(prefix,  " ", suffix) 
-  }  
-  
-  /** return the tune list as a set of tabular tr row items  */
+    quotedi.mkString(prefix,  " ", suffix)
+  }
+
+  /** return the tune list as a set of tabular tr row items
+      This is what TradTuneDB uses - a named subset of fields without
+      "abc" and "abcHeaders"
+  */
   def toHTML: String = {
     val endSpan = "</span>\n"
     if (0 == totalResults) {
@@ -70,15 +80,15 @@ class TuneList(i: Iterator[scala.collection.Map[String, String]], genre: String,
       val quotedi = i.map( cols => buildHtmlTr(cols) )
       val prefix = span + "<table>\n"
       val suffix = "</table>\n" + endSpan
-      quotedi.mkString(prefix,  " ", suffix) 
+      quotedi.mkString(prefix,  " ", suffix)
     }
-  }       
-  
+  }
+
   def toXML: String = {
       val jvalue = JsonParser.parse(toJSON)
       "<tunes>" + Xml.toXml(jvalue).toString + "</tunes>"
-  }  
-  
+  }
+
   /* supports json, html and xml at the moment */
   def to(mediaType:MediaType): String = {
       val formatExtension:String = mediaType.subType
@@ -89,19 +99,19 @@ class TuneList(i: Iterator[scala.collection.Map[String, String]], genre: String,
           // case "plain" =>  s.mkString(",")
           case _ => "Unsupported media type: " + formatExtension
         }
-    }   
-  
-  lazy val totalResults: Long = TuneModel().count(genre, searchParams)  
-  
-  
+    }
+
+  lazy val totalResults: Long = TuneModel().count(genre, searchParams)
+
+
   /** format a returned tune from the db list as an html list item (not used) */
   private def buildHtmlLi(cols: scala.collection.Map[String, String]): String = {
     val tuneId = TuneId(cols(TuneModel.tuneKey))
     val urlPrefix = "genre/" + java.net.URLEncoder.encode(genre, "UTF-8") + "/tune/"
     val id = java.net.URLEncoder.encode(cols(TuneModel.tuneKey), "UTF-8")
     "<li><a href=\""  +urlPrefix + id +"\" >"  + tuneId.name + "</a>" + " (" + tuneId.rhythm + ")"+ "</li>\n"
-  }      
-  
+  }
+
   /** format a returned tune from the db list as an html table row item */
   private def buildHtmlTr(cols: scala.collection.Map[String, String]): String = {
     val tuneId = TuneId(cols(TuneModel.tuneKey))
@@ -110,31 +120,31 @@ class TuneList(i: Iterator[scala.collection.Map[String, String]], genre: String,
     val dateSubmitted = formatDate(ts.toLong)
     val urlPrefix = "genre/" + java.net.URLEncoder.encode(genre, "UTF-8") + "/tune/"
     val id = java.net.URLEncoder.encode(cols(TuneModel.tuneKey), "UTF-8")
-    "<tr><td><a href=\""  +urlPrefix + id +"\" >"  + tuneId.name + "</a>" + otherTitles +  "</td><td>" + tuneId.rhythm + "</td><td>" + dateSubmitted + "</td>"  + "</tr>\n" 
+    "<tr><td><a href=\""  +urlPrefix + id +"\" >"  + tuneId.name + "</a>" + otherTitles +  "</td><td>" + tuneId.rhythm + "</td><td>" + dateSubmitted + "</td>"  + "</tr>\n"
     //"<tr><td><a href=\""  +urlPrefix + id +"\" >"  + tuneId.name + "</a></td><td>" + tuneId.rhythm + "</td><td>" + dateSubmitted + "</td>"  + "</tr>\n"
-  }    
-  
+  }
+
   private val pageInfoJSON:String = " \"pagination\" : { \"page\""  + ": \"" + page + "\" ," + "\"size\""  + ": \"" + size + "\" }"
   private val pageInfoHTML:String = "page=\"" + page + "\" " + "size=\"" + size + "\" "
-  
+
   private def formatDate(ts: Long): String = {
     val theDate: java.util.Date = new java.util.Date(ts)
     val format = new java.text.SimpleDateFormat("dd-MM-yyyy")
-    format.format(theDate)    
+    format.format(theDate)
   }
-  
 
-  
+
+
 }
 
 object TuneList {
-  def apply(genre: String, sort: String, page: Int, size: Int):TuneList = 
-      new TuneList(TuneModel().getTunes(genre, sort, page, size), genre, Map.empty[String, String], page, size) 
-  
-  def apply(genre: String, params: Map[String, String], sort: String, page: Int, size: Int):TuneList = 
-      new TuneList(TuneModel().search(genre, params, sort, page, size), genre, params, page, size)  
+  def apply(genre: String, sort: String, page: Int, size: Int):TuneList =
+      new TuneList(TuneModel().getTunes(genre, sort, page, size), genre, Map.empty[String, String], page, size)
 
-   implicit val TuneListMarshaller = {    
+  def apply(genre: String, params: Map[String, String], sort: String, page: Int, size: Int):TuneList =
+      new TuneList(TuneModel().search(genre, params, sort, page, size), genre, params, page, size)
+
+   implicit val TuneListMarshaller = {
 
      val canMarshalTo = Array (ContentTypes.`text/plain`,
                                ContentTypes.`application/json`,
@@ -147,5 +157,5 @@ object TuneList {
        }
      }
    }
-  
+
 }
