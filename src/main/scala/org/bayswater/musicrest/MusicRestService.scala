@@ -522,24 +522,26 @@ trait MusicRestService extends HttpService with CORSDirectives {
                  case _ => false
                }
                println(s"optional user is $userOpt is this the administrator $doRegister")
-               complete {
-                 val vu  = for {
-                   n <- User.checkName(URLDecoder.decode(name, "UTF-8"))
-                   e <- User.checkEmail(URLDecoder.decode(email, "UTF-8"))
-                   p <- User.checkPassword(URLDecoder.decode(password, "UTF-8"), URLDecoder.decode(password2, "UTF-8"))
-                   _ <- User.checkUnique(URLDecoder.decode(name, "UTF-8"))
-                   u <- User(n,e,p).insert(doRegister).disjunction
-                   /* New behaviour at 1.1.4.
-                    * we'll send a different email depending on whether or not the user is pre-registered or
-                    * whether the referring application provides us with a base URL for the registration link.
-                    *
-                    * At the moment, None means that there is no referer url to use - we'll use the musicrest one
-                    * otherwise for Some(url) we use a confirmation email with a url to the reference we're supplied with
-                    *
-                    */
-                   e <- Email.sendRegistrationMessage(u, doRegister, refererUrl).disjunction
-                   } yield u
-                 vu.validation
+               corsFilter(MusicRestSettings.corsOrigins) {
+                 complete {
+                   val vu  = for {
+                     n <- User.checkName(URLDecoder.decode(name, "UTF-8"))
+                     e <- User.checkEmail(URLDecoder.decode(email, "UTF-8"))
+                     p <- User.checkPassword(URLDecoder.decode(password, "UTF-8"), URLDecoder.decode(password2, "UTF-8"))
+                     _ <- User.checkUnique(URLDecoder.decode(name, "UTF-8"))
+                     u <- User(n,e,p).insert(doRegister).disjunction
+                     /* New behaviour at 1.1.4.
+                      * we'll send a different email depending on whether or not the user is pre-registered or
+                      * whether the referring application provides us with a base URL for the registration link.
+                      *
+                      * At the moment, None means that there is no referer url to use - we'll use the musicrest one
+                      * otherwise for Some(url) we use a confirmation email with a url to the reference we're supplied with
+                      *
+                      */
+                     e <- Email.sendRegistrationMessage(u, doRegister, refererUrl).disjunction
+                     } yield u
+                   vu.validation
+                   }
                  }
                }
              }
