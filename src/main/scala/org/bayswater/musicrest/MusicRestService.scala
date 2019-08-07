@@ -450,16 +450,19 @@ trait MusicRestService extends HttpService with CORSDirectives {
               formFields('user, 'timestamp, 'subject, 'text) { (submitter, timestamp, subject, text) =>  {
               val authorized = isOwnerOrAdministrator(submitter, user.username)
 
-              if (authorized) {
-                complete {
-                  val comment = Comment(submitter, timestamp, subject, text)
-                  Comments.insertComment(genre, tuneId, comment)
-                  }
+              corsFilter(MusicRestSettings.corsOrigins) {
+                if (authorized) {
+                  complete {
+                    val comment = Comment(submitter, timestamp, subject, text)
+                    Comments.insertComment(genre, tuneId, comment)
+                    }
+                }
+                else {
+                  println(s"user ${user.username} not authorized to insert comment owned by ${submitter} for ${tuneId}")
+                  reject(AuthorizationFailedRejection)
+                }
               }
-              else {
-                println(s"user ${user.username} not authorized to insert comment owned by ${submitter} for ${tuneId}")
-                reject(AuthorizationFailedRejection)
-              }
+
               }  }
             }
           }
