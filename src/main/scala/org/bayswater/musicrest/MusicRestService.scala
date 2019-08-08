@@ -478,6 +478,14 @@ trait MusicRestService extends HttpService with CORSDirectives {
       path(Segment / "tune" / Segment / "comment" / Segment / Segment ) { (genre, tuneEncoded, submitterEncoded, timestamp) =>  {
         val tuneId = java.net.URLDecoder.decode(tuneEncoded, "UTF-8")
         val submitter = java.net.URLDecoder.decode(submitterEncoded, "UTF-8")
+        /* CORS options */
+        options {
+          corsOptionsFilter(MusicRestSettings.corsOrigins) {
+            _.complete {
+              "options".success
+            }
+          }
+        } ~
         /** Get an individual comment  */
         get {
           corsFilter(MusicRestSettings.corsOrigins) {
@@ -491,16 +499,18 @@ trait MusicRestService extends HttpService with CORSDirectives {
 
            val authorized = isOwnerOrAdministrator(submitter, user.username)
 
-            if (authorized) {
-              respondWithMediaType(`text/plain`) {
-                complete {
-                  Comments.deleteComment(genre, tuneId, submitter, timestamp)
+           corsFilter(MusicRestSettings.corsOrigins) {
+              if (authorized) {
+                respondWithMediaType(`text/plain`) {
+                  complete {
+                    Comments.deleteComment(genre, tuneId, submitter, timestamp)
+                  }
                 }
               }
-            }
-            else  {
-              reject(AuthorizationFailedRejection)
-            }
+              else  {
+                reject(AuthorizationFailedRejection)
+              }
+            }  // end of cors filter
           } }
         } }
       }          // end of comments paths
