@@ -206,6 +206,13 @@ trait MusicRestService extends HttpService with CORSDirectives {
         }
       } ~
       path(Segment / "tune" / Segment) { (genre, tuneEncoded) =>
+        options {
+          corsOptionsFilter(MusicRestSettings.corsOrigins) {
+            _.complete {
+              "options".success
+            }
+          }
+        } ~
         // get a tune (in whatever format)
         get {
           val tune = java.net.URLDecoder.decode(tuneEncoded, "UTF-8")
@@ -225,27 +232,29 @@ trait MusicRestService extends HttpService with CORSDirectives {
               case (Some(s), u) => s == u
               case _ => false
             }
-            if (authorized) complete {
-              // delete from the file system cache
-              val dir = new File(MusicRestSettings.transcodeCacheDir)
-              clearTuneFromCache(dir, tune)
-              // delete all related comments
-              Comments.deleteComments(genre, tune)
-              // delete from the database
-              val result = TuneModel().delete(genre, tune)
-              result
-            }
-            else {
-              // we'll use the horrible exception mechanism for the time being to get
-              // a proper HTTP response
-              val message =
-                if (submitter.isDefined) {
-                  s"You can only delete tunes that you originally submitted"
-                }
-                else {
-                  s"No such tune: $tune"
-                }
-              throw new MusicRestService.MusicRestException(message)
+            corsFilter(MusicRestSettings.corsOrigins) {
+              if (authorized) complete {
+                // delete from the file system cache
+                val dir = new File(MusicRestSettings.transcodeCacheDir)
+                clearTuneFromCache(dir, tune)
+                // delete all related comments
+                Comments.deleteComments(genre, tune)
+                // delete from the database
+                val result = TuneModel().delete(genre, tune)
+                result
+              }
+              else {
+                // we'll use the horrible exception mechanism for the time being to get
+                // a proper HTTP response
+                val message =
+                  if (submitter.isDefined) {
+                    s"You can only delete tunes that you originally submitted"
+                  }
+                  else {
+                    s"No such tune: $tune"
+                  }
+                throw new MusicRestService.MusicRestException(message)
+              }
             }
           }
         }
