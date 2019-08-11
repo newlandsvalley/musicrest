@@ -123,9 +123,17 @@ trait MusicRestService extends HttpService with CORSDirectives {
   val tuneRoute =
     pathPrefix("musicrest") {
       pathEndOrSingleSlash {
+        options {
+          corsOptionsFilter(MusicRestSettings.corsOrigins) {
+            _.complete {
+              "options".success
+            }
+          }
+        } ~
         get {
-            // logger.info("welcome")
-            complete (Welcome())
+            corsFilter(MusicRestSettings.corsOrigins) {
+              complete (Welcome())
+            }
         }
       }
     } ~

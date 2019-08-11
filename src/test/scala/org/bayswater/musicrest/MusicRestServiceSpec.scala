@@ -77,7 +77,7 @@ class MusicRestServiceSpec extends RoutingSpec with MusicRestService {
     "return a MethodNotAllowed error for PUT requests to the root path" in {
       Put("/musicrest") ~> sealRoute(musicRestRoute) ~> check {
         status === MethodNotAllowed
-        responseAs[String] === "HTTP method not allowed, supported methods: GET"
+        responseAs[String] === "HTTP method not allowed, supported methods: OPTIONS, GET"
       }
     }
 

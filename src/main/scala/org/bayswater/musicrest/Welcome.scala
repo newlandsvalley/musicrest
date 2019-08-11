@@ -29,10 +29,18 @@ class Welcome {
 
   def toHtml: String = s"<h2>$welcomeMessage<h2>"
 
+  def toJSON: String = {
+    "{" +
+    Util.formatJSON("welcome", welcomeMessage) +  " "
+    "}"
+  }
+
+
   /* supports plain text, html and xml at the moment */
   def to(mediaType:MediaType): String = {
       val formatExtension:String = mediaType.subType
       formatExtension match {
+          case "json" => toJSON
           case "xml" =>  toXML
           case "html" => toHtml
           case "plain" =>  welcomeMessage
