@@ -28,7 +28,9 @@ class UserList(i: Iterator[UserRef], page: Int, size: Int) {
   
   def toJSON: String = {
     val quotedi = i.map( userRef => {
-     "{ " +  formatJSON("name", userRef.name) + ", " + formatJSON("email", userRef.email) + "}\n"
+     "{ " +  formatJSON("name", userRef.name) + 
+        ", " + formatJSON("email", userRef.email) + 
+        ", "  + formatJSON("valid", userRef.valid) + "}\n"
     })  
     quotedi.mkString("{ \"user\": [", ",", "], " + pageInfoJSON + "  }") 
   }    
