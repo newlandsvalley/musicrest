@@ -20,31 +20,38 @@ package org.bayswater.musicrest.tools
 import com.mongodb.casbah.Imports._
 import org.bayswater.musicrest.model._
 
-object GenreInsert { 
-  
+object GenreInsert {
+
   def main(args: Array[String]): Unit = {
-    if (args.length < 1) {      
-      println("Usage: GenreInsert <db name>")
+    if (args.length < 4) {
+      println("Usage: GenreInsert <host> <user> <password> <db name>")
       System.exit(0)
-    }    
-    
-    val dbName = args(0)
-    insertAllGenres(dbName)
+    }
+
+    val dbHost = args(0)
+    val dbUser = args(1)
+    val dbPassword = args(2)
+    val dbName = args(3)
+
+    insertAllGenres(dbHost, dbUser, dbPassword, dbName)
     ensureIndexes(dbName, List("irish", "scottish", "scandi", "klezmer"))
   }
- 
-  def insertAllGenres(dbName: String) {
+
+  def insertAllGenres(dbHost: String, dbUser: String, dbPassword: String, dbName: String) {
     val collectionName = "genre"
-    val mongoCollection = MongoClient()(dbName)(collectionName)
-    
+
+    // use default port for the time being
+    val mongoClient = MongoCasbahUtil.buildMongoClient(dbHost,  27017, dbUser, dbPassword, dbName)
+    val mongoCollection = mongoClient (dbName) (collectionName)
+
     insert(mongoCollection, "irish", MongoDBList("jig","reel","hornpipe","barndance","highland","march","mazurka","polka","slide","slip jig","waltz"))
     insert(mongoCollection, "scottish", MongoDBList("jig","reel","hornpipe","barndance","march","schottische","slip jig","strathspey","waltz"))
     insert(mongoCollection, "scandi", MongoDBList("polska","brudmarsch","gånglåt","skänklåt","slängpolska","polka","långdans","marsch","schottis","engelska",
-                       "halling","hambo","sekstur", "waltz"))    
+                       "halling","hambo","sekstur", "waltz"))
     insert(mongoCollection, "klezmer", MongoDBList("bulgar","freylekhs","khosidl","hora", "csardas","doina", "honga", "hopak","kasatchok",
-                             "kolomeyke","sher","sirba","skotshne","taksim","terkish"))    
+                             "kolomeyke","sher","sirba","skotshne","taksim","terkish"))
   }
- 
+
   def insert(mongoCollection: MongoCollection, genre: String, rhythms: MongoDBList) {
     println ("inserting " + genre)
     val builder = MongoDBObject.newBuilder[String, Any]
@@ -54,8 +61,8 @@ object GenreInsert {
     mongoCollection += builder.result
     println("insuring index on " + genre)
   }
-  
-   private def ensureIndexes(dbName: String, genres: List[String]) {    
+
+   private def ensureIndexes(dbName: String, genres: List[String]) {
     val tuneModel = new TuneModelCasbahImpl(MongoClient(), dbName)
     genres.foreach {g => tuneModel.createIndex(g) }
   }

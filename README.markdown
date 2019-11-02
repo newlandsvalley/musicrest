@@ -1,4 +1,4 @@
-## _MusicRest_ 
+## _MusicRest_
 
 This is a RESTful web service which allows you to upload traditional tunes in [ABC](http://abcnotation.com/) notation and then have them transcoded into a variety of formats.  In particular, you can use MusicRest to see a tune score in **pdf**, **ps** or **png** format or to listen to the tune (using a variety of tempi and instruments) in **wav** or **midi** format. It supports two different approaches for doing this:  
 
@@ -37,7 +37,7 @@ URL path segments in italics represent fixed text; those in bold type are variab
 *  GET / _musicrest_ / _genre_ / **agenre** / _tune_ / **atune** / _exists_ - return true if the tune exists
 
 *  GET / _musicrest_ / _genre_ / **agenre** / _tune_ / **atune** / **format** - get a tune the requested format (which can be abc, html, wav, pdf, ps or midi)
- 
+
 *  POST / _musicrest_ / _genre_ / **agenre** / _tune_ / **atune** / _abc_ - add an alternative title to the tune
 
 *  GET / _musicrest_ / _genre_ / _search_ - get a paged list of tunes that correspond to the search parameters.
@@ -46,7 +46,7 @@ URL path segments in italics represent fixed text; those in bold type are variab
 
 A user must be logged in before he can submit or test-transcode a tune. Only the original submitter or the *administrator* user is allowed to delete tunes.  
 
-Production of wav output is still supported, but deprecated.  It is too expensive to produce server-side unless you have a powerful server and a large data cache. 
+Production of wav output is still supported, but deprecated.  It is too expensive to produce server-side unless you have a powerful server and a large data cache.
 
 
 ##### Comments
@@ -91,13 +91,13 @@ Most lists may be obtained in xml, html or json format.
 Linux is required for its transcoding services. MusicRest has been tested under Ubuntu 12.04. The following must be installed or present before the service can be run:
 
 * a JVM (Java 1.8 or better)
-* [MongoDB](http://www.mongodb.org/)  (2.0.4 or better)
+* [MongoDB](http://www.mongodb.org/)  (2.4.14)
 * [AbcMidi](http://abc.sourceforge.net/abcMIDI/) (3.10 or better)
 * [Abcm2ps](http://abcplus.sourceforge.net/#abcm2ps) (5.9.25 or better)
 * [ImageMagick](http://www.imagemagick.org/script/index.php) (8:6.6.9.7-5ubuntu or better)
 * [Timidity](https://wiki.archlinux.org/index.php/Timidity)  (2.13.2 or better)
 
-The _scripts_ directory contains shell scripts that invoke the transcoding services.  You must be sure to make these executable  ( _chmod +x_ ) 
+The _scripts_ directory contains shell scripts that invoke the transcoding services.  You must be sure to make these executable  ( _chmod +x_ )
 
 #### _Configuration_
 
@@ -122,6 +122,8 @@ _corsOrigins_ allows any of the nominated servers to make available scripts that
         host   = "localhost"
         port   = 27017
         dbName = "tunedb"
+        login = "musicrest"
+        password = "changeit"
         poolSize = 60
       }
       paging {
@@ -141,14 +143,14 @@ _corsOrigins_ allows any of the nominated servers to make available scripts that
 
 #### _Web Front End_
 
-There is no web front end included within this project.  However [tradtunedb](http://tradtunedb.org.uk/) uses musicrest as a backend service.
+There is no web front end included within this project.  However [tradtunedb](http://tradtunedb.org.uk/) and [tunebank-frontend](http://tradtunedb.org.uk:8604/) use musicrest as a backend service.
 
 ### _Build and Deploy_
 
 #### _Source Code_
 
 Code is written in scala 2.11.7 and built with sbt.   
-    
+
 ```
    "io.spray"            %   "spray-can_2.11"     % "1.3.4",
    "io.spray"            %   "spray-routing_2.11" % "1.3.4",
@@ -167,13 +169,16 @@ Code is written in scala 2.11.7 and built with sbt.
 
 Spray uses logback for logging, but there is an unfortunate dependency on slf4j brought in by Casbah.
 
-#### _Bootstrapping the Database_
+#### _Bootstrapping the Database
 
-Before MusicRest can be used, you need to set an administrator user and also set up the genres and rhythms the system recognizes.  These are held on the database and can be set up by means of the scripts _userinsert.sh_ and _genreinsert.sh_. There are also scripts to import tunes into or export tunes from the database in bulk.
+Firstly, create a MongoDB database, configure an admin user and determine the name of the database you wish to use (e.g. tunedb).
+Then set up a user within this database with readWrite permissions for use in the database section of the MusicRest configuration file shown above.
+
+Before MusicRest can be used, you need to set an administrator user within MusicRest itself and also set up the genres and rhythms the system recognizes.  These are held on the database and can be set up by means of the scripts _userinsert.sh_ and _genreinsert.sh_. There are also scripts to import tunes into or export tunes from the database in bulk.
 
 #### _Build Instructions_
 
-1. Install the runtime dependencies.  Start Mongo and configure MusicRest with the name of the Mongo database you wish to use
+1. Install the runtime dependencies.  Administer Mongo with appropriate users. Start Mongo and configure MusicRest with the name of the Mongo database and the user credentials you wish to use
 
 2. Launch sbt
 
@@ -193,4 +198,3 @@ Alternatively, you can build and then run a single jar assembly using:
 
 *  [Blog](http://myelucubrations.blogspot.co.uk/)
 *  [Spray](http://spray.io/)
-

@@ -1,27 +1,31 @@
 #!/bin/bash
-#############################################
+##########################################################################
 #
 # insert a user into Mongo
 # (specifically bootstrap by adding administrator)
 #
-# usage: userinsert.sh dbname uname password email
+# usage: userinsert.sh dbhost dbuser dbpassword dbname uname password email
 #
-#############################################
+###########################################################################
 
-EXPECTED_ARGS=4
+EXPECTED_ARGS=7
 
 if [ $# -ne $EXPECTED_ARGS ]
 then
-  echo "Usage: `basename $0` {dbname} {uname} {password} {email}"
+  echo "Usage: `basename $0` {dbhost} {dbuser} {dbpassword} {dbname} {uname} {password} {email}"
   exit $E_BADARGS
 fi
 
-dbname=$1
-uname=$2
-password=$3
+
+dbhost=$1
+dbuser=$2
+dbpassword=$3
+dbname=$4
+uname=$5
+password=$6
 email=$4
 
-java -Dconfig.file=conf/musicrest.conf -classpath target/scala-2.11/musicrest-2.11-assembly-1.1.7.jar org.bayswater.musicrest.tools.UserInsert $dbname $uname $password $email
+java -Dconfig.file=conf/musicrest.conf -classpath target/scala-2.11/musicrest-2.11-assembly-1.3.0.jar org.bayswater.musicrest.tools.UserInsert $dbhost $dbuser $dbpassword $dbname $uname $password $email
 
 
 echo "abc return: " $retcode

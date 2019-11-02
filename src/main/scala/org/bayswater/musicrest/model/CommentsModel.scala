@@ -22,20 +22,20 @@ import com.mongodb.ServerAddress
 import scalaz.Validation
 
 
-trait CommentsModel { 
+trait CommentsModel {
 
   /** insert a comment  */
-  def insertComment(genre: String, tune: String, comment: Comment): Validation[String, String] 
+  def insertComment(genre: String, tune: String, comment: Comment): Validation[String, String]
 
   /** get a comment by key*/
   def getComment(genre: String, tune: String, user: String, cid: String) : Validation[String, Comment]
 
   /** delete a comment by key */
-  def deleteComment(genre: String, tuneId: String, user: String, cid: String) : Validation[String, String] 
-  
+  def deleteComment(genre: String, tuneId: String, user: String, cid: String) : Validation[String, String]
+
   /** delete all comments for a genre */
-  def deleteAllComments(genre: String) : Validation[String, String] 
-  
+  def deleteAllComments(genre: String) : Validation[String, String]
+
   /** delete all comments for a genre and tune */
   def deleteComments(genre: String, tuneId: String) : Validation[String, String]
 
@@ -44,13 +44,18 @@ trait CommentsModel {
 
 }
 
-object CommentsModel {    
+object CommentsModel {
+  private val settings = MusicRestSettings
 
-  private val musicRestSettings = MusicRestSettings
-  private val mongoOptions = MongoClientOptions ( connectionsPerHost = musicRestSettings.dbPoolSize )
-  private val mongoClient = MongoClient(new ServerAddress(musicRestSettings.dbHost,  musicRestSettings.dbPort), mongoOptions)
-  private val commentsModel = new CommentsModelNormalisedCasbahImpl(mongoClient, musicRestSettings.dbName)
-  // private val port = 27017
-  // private val host = "localhost"
+  private val mongoClient =
+     MongoCasbahUtil.buildMongoClient(  settings.dbHost
+                                      , settings.dbPort
+                                      , settings.dbLogin
+                                      , settings.dbPassword
+                                      , settings.dbName
+                                      , Some(settings.dbPoolSize)
+                                      )
+
+  private val commentsModel = new CommentsModelNormalisedCasbahImpl(mongoClient, settings.dbName)
   def apply(): CommentsModel = commentsModel
 }

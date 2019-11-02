@@ -16,26 +16,34 @@
 
 package org.bayswater.musicrest.tools
 
+import org.bayswater.musicrest.model.MongoCasbahUtil
 import com.mongodb.casbah.Imports._
 
 object UserInsert {
-  
+
  def main(args: Array[String]): Unit = {
-    if (args.length < 4) {      
-      println("Usage: UserInsert <db name> <user name> <password> <email>")
+    if (args.length < 7) {
+      println("Usage: UserInsert <host> <db user> <db password> <db name> <user name> <password> <email>")
       System.exit(0)
-    }    
-    
-    val dbName = args(0)
-    val uName = args(1)    
-    val password = args(2)
-    val email = args(3)
-    
-    insertUser(dbName, uName, password, email)
-    
-    def insertUser(dbName: String, uName: String, password: String, email: String) {
+    }
+
+    val dbHost = args(0)
+    val dbUser = args(1)
+    val dbPassword = args(2)
+    val dbName = args(3)
+    val uName = args(4)
+    val password = args(5)
+    val email = args(6)
+
+    insertUser(dbHost, dbUser, dbPassword, dbName, uName, password, email)
+
+    def insertUser(dbHost: String, dbUser: String, dbPassword: String, dbName: String, uName: String, password: String, email: String) {
       val collectionName = "users"
-      val mongoCollection = MongoConnection()(dbName)(collectionName)
+
+      // use default port for the time being
+      val mongoClient = MongoCasbahUtil.buildMongoClient(dbHost,  27017, dbUser, dbPassword, dbName)
+
+      val mongoCollection = mongoClient (dbName) (collectionName)
       println ("inserting " + uName)
       val builder = MongoDBObject.newBuilder[String, String]
       builder += "_id" -> uName
@@ -44,6 +52,6 @@ object UserInsert {
       builder += "valid" -> "Y"
       mongoCollection += builder.result
       "User: " + uName + " added"
-    }    
+    }
   }
 }

@@ -20,25 +20,25 @@ import com.typesafe.config.{Config, ConfigFactory}
 import scala.collection.JavaConverters._
 
 object MusicRestSettings {
-  
+
   // this relies on setting the -D JVM config.file parameter named config.file (also set in Build.sbt)
   private[this] val c: Config = {
     val c = ConfigFactory.load()
     c.checkValid(ConfigFactory.defaultReference(), "musicrest")
     c.getConfig("musicrest")
   }
-  
+
   /** the spray can server */
   val serverHost          = c getString         "server.host"
   val serverPort          = c getInt            "server.port"
-  val thisServer          = serverHost + ":" + serverPort.toInt 
-  
+  val thisServer          = serverHost + ":" + serverPort.toInt
+
   val scriptDir            = resolveRelativeDir(c getString "transcode.scriptDir")
   val transcodeCacheDir    = resolveRelativeDir(c getString "transcode.cacheDir")
-  
+
   val cacheClearInterval  = c getInt          "transcode.cacheClearInterval"
   val cacheMaxSizeMb      = c getInt          "transcode.cacheMaxSizeMb"
-  
+
   // various subdirectories used by transcoder
   val dirCore          = transcodeCacheDir + "/core"
   val dirTry           = transcodeCacheDir + "/try"
@@ -49,27 +49,30 @@ object MusicRestSettings {
   val pdfDirTry        = transcodeCacheDir + "/try/pdf"
   val abcDirPlay       = transcodeCacheDir + "/play/abc"
   val wavDirPlay       = transcodeCacheDir + "/play/wav"
-  
+
   val defaultPageSize  = c getInt          "paging.defaultSize"
-  
-  val dbName           = c getString       "database.dbName" 
-  val dbHost           = c getString       "database.host" 
+
+  val dbName           = c getString       "database.dbName"
+  val dbHost           = c getString       "database.host"
   val dbPort           = c getInt          "database.port"
   val dbPoolSize       = c getInt          "database.poolSize"
-  
+  val dbLogin          = c getString       "database.login"
+  val dbPassword       = c getString       "database.password"
+
+
   val mailHost         = c getString       "mail.host"
   val mailPort         = c getString       "mail.port"
   val mailLogin        = c getString       "mail.login"
   val mailPassword     = c getString       "mail.password"
-  val mailFromAddress  = c getString       "mail.fromAddress"  
- 
+  val mailFromAddress  = c getString       "mail.fromAddress"
+
   val corsOriginsJava               = c getStringList "security.corsOrigins"
   val corsOrigins:List[String]      = corsOriginsJava.asScala.toList
 
-  def resolveRelativeDir(dir: String) = 
+  def resolveRelativeDir(dir: String) =
     if (dir.startsWith("/"))
        dir
-    else System.getProperty("user.dir") + "/" + dir   
-  
-  
+    else System.getProperty("user.dir") + "/" + dir
+
+
 }
