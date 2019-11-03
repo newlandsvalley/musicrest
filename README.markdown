@@ -171,10 +171,13 @@ Spray uses logback for logging, but there is an unfortunate dependency on slf4j 
 
 #### _Bootstrapping the Database
 
-Firstly, create a MongoDB database, configure an admin user and determine the name of the database you wish to use (e.g. tunedb).
+Firstly, create a MongoDB database, configure an admin user and determine the name of the database you wish to use (e.g. tunedb). The admin user needs the following permissions - userAdminAnyDatabase, readWriteAnyDatabase and dbAdminAnyDatabase.
 Then set up a user within this database with readWrite permissions for use in the database section of the MusicRest configuration file shown above.
 
-Before MusicRest can be used, you need to set an administrator user within MusicRest itself and also set up the genres and rhythms the system recognizes.  These are held on the database and can be set up by means of the scripts _userinsert.sh_ and _genreinsert.sh_. There are also scripts to import tunes into or export tunes from the database in bulk.
+Before MusicRest can be used, you need to set an administrator user within MusicRest itself and also set up the genres and rhythms the system recognizes.  These are held on the database and can be set up by means of the scripts _userinsert.sh_ and _genreinsert.sh_. These scripts
+should be run with mongod __without__ the --auth parameter (because of what seems to be a Mongo 2.4/Casbah 3.1.1 bug which disallows creating
+indexes).  Once the scripts are complete and the user and genre collections inspected, then reboot with --auth in place.
+There are also scripts to import tunes into or export tunes from the database in bulk.
 
 #### _Build Instructions_
 
