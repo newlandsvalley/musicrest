@@ -11,7 +11,7 @@ EXPECTED_ARGS=5
 
 if [ $# -ne $EXPECTED_ARGS ]
 then
-  echo "Usage: `basename $0` {server} {adminpass} {uname} {password} {email}"
+  echo "Usage: `basename $0` {musicrest server} {adminpass} {uname} {password} {email}"
   exit $E_BADARGS
 fi
 
@@ -21,6 +21,6 @@ uname=$3
 password=$4
 email=$5
 
-java -Dconfig.file=conf/musicrest.conf -classpath target/scala-2.11/musicrest-2.11-assembly-1.1.7.jar org.bayswater.musicrest.tools.RemoteUserInsert $server $adminpass $uname $password $email
+java -Dconfig.file=conf/musicrest.conf -classpath target/scala-2.11/musicrest-2.11-assembly-1.3.0.jar org.bayswater.musicrest.tools.RemoteUserInsert $server $adminpass $uname $password $email
 
 exit $retcode

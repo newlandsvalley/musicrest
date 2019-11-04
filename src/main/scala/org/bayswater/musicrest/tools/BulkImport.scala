@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2013 org.bayswater
+ * Copyright (C) 2011-2019 org.bayswater
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,59 +19,58 @@ package org.bayswater.musicrest.tools
 import java.io.{File, FileInputStream, BufferedInputStream}
 import scalaz.Validation
 import com.mongodb.casbah.Imports._
+import org.bayswater.musicrest.MusicRestSettings
 import org.bayswater.musicrest.Util
 import org.bayswater.musicrest.abc._
 import org.bayswater.musicrest.model._
 
-// bulk import to Mongo via the Tune Model (Casbah-based API)
-class BulkImport(val abcDir: String, val dbName: String, val genre: String) {
-  
+/* bulk import to Mongo via the Tune Model (Casbah-based API)
+ * with mongo connections defined by the musicrest configuration file
+ * assumed to be loaded via a java -D parameter
+ */
+class BulkImport(val genre: String, val abcDir: String) {
+
+  val settings = MusicRestSettings
+
   def process  {
-    println("importing into " + dbName + " genre: " + genre + " from " + abcDir)
-    
+    println("importing from abcdir: " + abcDir + " on host: " + settings.dbHost + " database: " + settings.dbName + " genre: " + genre)
+
     val dir = new File(abcDir)
     val fileList = dir.listFiles
     for (file <- fileList) { processFile(file) }
-    createIndex(genre)
    }
-  
+
   private def processFile(file: File) {
     println(file.getName())
     val bis = new BufferedInputStream(new FileInputStream(file))
     val contents = new String(Util.readInput(bis))
-    val abcSubmission = AbcSubmission(contents.lines, genre, "administrator") 
+    val abcSubmission = AbcSubmission(contents.lines, genre, "administrator")
     val validAbc:Validation[String, Abc] = abcSubmission.validate
-    validAbc.fold(e => println("unexpected error: " + e), s => insertToMongo(s))          
+    validAbc.fold(e => println("unexpected error: " + e), s => insertToMongo(s))
   }
-  
-  private def insertToMongo(abc: Abc) {  
-    val tuneModel = new TuneModelCasbahImpl(MongoClient(), dbName)
+
+  private def insertToMongo(abc: Abc) {
     println ("inserting " + abc.name + " if it's new")
     abc.insertIfNew(genre)
-  }
-  
-  private def createIndex(genre: String) {    
-    val tuneModel = new TuneModelCasbahImpl(MongoClient(), dbName)
-    tuneModel.createIndex(genre)
   }
 }
 
 object BulkImport {
 
   def main(args: Array[String]): Unit = {
-    if (args.length < 3) {      
-      println("Usage: BulkImport <abc dir path> <db name> <collection (genre)>")
+    if (args.length < 2) {
+      println("Usage: BulkImport  <collection (genre)> <abc dir path>")
       System.exit(0)
     }
-    
-    val abcDir = args(0)
-    val dbName = args(1)
-    val collectionName = args(2)
-    val bulkImport = BulkImport(abcDir, dbName, collectionName)
+
+    val collectionName = args(0)
+    val abcDir = args(1)
+
+    val bulkImport = BulkImport(collectionName, abcDir)
     bulkImport.process
   }
-  
-  def apply(abcDir: String, dbName: String, genre: String) : BulkImport = new BulkImport(abcDir, dbName, genre)
-  
+
+  def apply(genre: String, abcDir: String) : BulkImport =
+    new BulkImport(genre, abcDir)
 
 }

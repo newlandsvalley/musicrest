@@ -20,44 +20,45 @@ import org.bayswater.musicrest.model._
 import com.mongodb.casbah.Imports._
 import org.bayswater.musicrest.Util._
 
-/** generate java script for the trad tune store web application */
+/** generate java script for the trad tune store web application 
+    this will be deprecated once we rely of the new tunebank client */
 object TuneStoreJS {
-  
- def main(args: Array[String]): Unit = {   
- 
-   if (args.length < 1) {      
+
+ def main(args: Array[String]): Unit = {
+
+   if (args.length < 1) {
       println("Usage: TuneStoreJS <db name>")
       System.exit(0)
-   }      
-    
+   }
+
    val dbName = args(0)
    val fileName = "tradtunestore.js"
    val file = new java.io.File(fileName)
    val contents = prefix + caseStatements(dbName) + suffix
    writeTextFile(file, contents.lines)
-   println(fileName + " generated")      
+   println(fileName + " generated")
  }
- 
+
  def prefix: String = {
  """var arr;
  var option;
 
  // dynamic selection drop-downs
  function rhythmChange(genre, includeAny) {
-   var rhythm_dropdown = document.getElementById("rhythm_dropdown");   
+   var rhythm_dropdown = document.getElementById("rhythm_dropdown");
    // Set each option to null thus removing it
    while ( rhythm_dropdown.options.length ) rhythm_dropdown.options[0] = null;
 
-   switch (genre) {   
+   switch (genre) {
  """
  }
- 
+
  def suffix: String = {
- """    
+ """
     default:
-      arr = new Array("")     
-    break; 
-   }   
+      arr = new Array("")
+    break;
+   }
 
    if (includeAny) {
      arr = new Array("any").concat(arr0);
@@ -72,20 +73,20 @@ object TuneStoreJS {
    }
    rhythm_dropdown.disabled = false;
   }
-   
-  function selectGenre(genre) {    
+
+  function selectGenre(genre) {
     var element = document.getElementById('genre');
     element.value = genre;
   }
 
-  function selectRhythm(rhythm) {    
+  function selectRhythm(rhythm) {
     var element = document.getElementById('rhythm_dropdown');
     element.value = rhythm;
   }
 
   function genreInit(genre) {
      selectGenre(genre)
-     var genre_dropdown = document.getElementById("genre");   
+     var genre_dropdown = document.getElementById("genre");
      rhythmChange(genre, true)
   }
 
@@ -93,9 +94,9 @@ object TuneStoreJS {
      genreInit(genre)
      selectRhythm(rhythm)
   }
- """   
+ """
  }
- 
+
  def caseStatements(dbName: String): String = {
    val tuneModel = new TuneModelCasbahImpl(MongoClient(), dbName)
    val sb = StringBuilder.newBuilder

@@ -20,64 +20,65 @@ import org.bayswater.musicrest.model._
 import com.mongodb.casbah.Imports._
 import org.bayswater.musicrest.Util._
 
-/** generate java script for the trad tune store version 1.0.5 web application */
+/** generate java script for the trad tune store version 1.0.5 web application
+    this will be deprecated once we rely of the new tunebank client */
 object TuneStore105JS {
-  
- def main(args: Array[String]): Unit = {   
- 
-   if (args.length < 1) {      
+
+ def main(args: Array[String]): Unit = {
+
+   if (args.length < 1) {
       println("Usage: TuneStore105JS <db name>")
       System.exit(0)
-   }      
-    
+   }
+
    val dbName = args(0)
    val fileName = "tradtunestore.js"
    val file = new java.io.File(fileName)
    val contents = prefix + caseStatements(dbName) + suffix
    writeTextFile(file, contents.lines)
-   println(fileName + " generated")      
+   println(fileName + " generated")
  }
- 
+
  def prefix: String = {
  """var arr;
  var option;
 
  // dynamic selection drop-downs
  function rhythmChange(genre) {
-   var rhythm_dropdown = document.getElementById("rhythm_dropdown");   
+   var rhythm_dropdown = document.getElementById("rhythm_dropdown");
    // Set each option to null thus removing it
    while ( rhythm_dropdown.options.length ) rhythm_dropdown.options[0] = null;
 
-   switch (genre) {   
+   switch (genre) {
  """
  }
- 
+
  def suffix: String = {
- """    
+ """
     default:
-      arr = new Array("")     
-    break; 
-   }   
+      arr = new Array("")
+    break;
+   }
    for (var i=0;i<arr.length;i++) {
      option = new Option(arr[i],arr[i]);
      rhythm_dropdown.options[i] = option;
    }
    rhythm_dropdown.disabled = false;
   }
-   
-  function selectGenre(genre) {    
+
+  function selectGenre(genre) {
     var element = document.getElementById('genre');
     element.value = genre;
   }
 
   function genreInit(genre) {
      selectGenre(genre)
-     var genre_dropdown = document.getElementById("genre");   
+     var genre_dropdown = document.getElementById("genre");
      rhythmChange(genre)
   }
- """   
+ """
  }
- 
+
  def caseStatements(dbName: String): String = {
    val tuneModel = new TuneModelCasbahImpl(MongoClient(), dbName)
    val sb = StringBuilder.newBuilder

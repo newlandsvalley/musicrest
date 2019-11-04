@@ -1,32 +1,32 @@
 #!/bin/bash
-#############################################
+##################################################################
 #
 # bulk export all abc from mongo genre
 #
-# usage: bulkexport.sh abcdir dbname genre
+# usage: bulkexport.sh genre abcdir
 #
-#############################################
+###################################################################
 
-EXPECTED_ARGS=3
+EXPECTED_ARGS=2
 
 if [ $# -ne $EXPECTED_ARGS ]
 then
-  echo "Usage: `basename $0` {abcdir dbname genre}"
+  echo "Usage: `basename $0` {collection} {abcdir}"
   exit $E_BADARGS
 fi
 
+
+collection=$1
 # source
-abcdir=$1
+abcdir=$2
 if [ ! -d $abcdir ]
 then
   echo "$abcdir not a directory" >&2   # Error message to stderr.
   exit 1
-fi  
+fi
 
-dbname=$2
-genre=$3
 
-java -Dconfig.file=conf/musicrest.conf -classpath target/scala-2.11/musicrest-2.11-assembly-1.1.7.jar org.bayswater.musicrest.tools.BulkExport $abcdir $dbname $genre
+java -Dconfig.file=conf/musicrest.conf -classpath target/scala-2.11/musicrest-2.11-assembly-1.3.0.jar org.bayswater.musicrest.tools.BulkExport $collection $abcdir
 
 echo "abc return: " $retcode
 

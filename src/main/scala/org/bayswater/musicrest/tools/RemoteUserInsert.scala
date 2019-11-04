@@ -31,6 +31,10 @@ import spray.httpx.RequestBuilding._
 import spray.http.HttpHeaders._
 import java.net.URLEncoder
 
+/* insert a user via the REST API to the nominated MusicRest server
+ * perhaps outdated now that we can insert a user to a remote mongo database
+ */
+
 object RemoteUserInsert {
 
   def main(args: Array[String]): Unit = {
@@ -40,7 +44,7 @@ object RemoteUserInsert {
       System.exit(0)
     }
 
-  
+
     val serverName = args(0)
     val adminPassword = args(1)
     val uName = args(2)
@@ -59,7 +63,6 @@ object RemoteUserInsert {
 
     future.onComplete { _ => system.terminate() }
   }
-
 
 
   def insertUser(serverName: String, adminPassword: String, uName: String, password: String, email: String)(implicit system: ActorSystem) : Future[HttpResponse] = {
