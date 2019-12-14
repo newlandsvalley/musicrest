@@ -25,16 +25,16 @@ import org.bayswater.musicrest.Util._
 import org.bayswater.musicrest.model.{UserModel, UserRef}
 
 class UserList(i: Iterator[UserRef], page: Int, size: Int) {
-  
+
   def toJSON: String = {
     val quotedi = i.map( userRef => {
-     "{ " +  formatJSON("name", userRef.name) + 
-        ", " + formatJSON("email", userRef.email) + 
+     "{ " +  formatJSON("name", userRef.name) +
+        ", " + formatJSON("email", userRef.email) +
         ", "  + formatJSON("valid", userRef.valid) + "}\n"
-    })  
-    quotedi.mkString("{ \"user\": [", ",", "], " + pageInfoJSON + "  }") 
-  }    
-  
+    })
+    quotedi.mkString("{ \"user\": [", ",", "], " + pageInfoJSON + "  }")
+  }
+
    /** return the user list as a set of tabular tr row items  */
   def toHTML: String = {
     val endSpan = "</span>\n"
@@ -47,15 +47,15 @@ class UserList(i: Iterator[UserRef], page: Int, size: Int) {
       val quotedi = i.map( u => buildHtmlTr(u) )
       val prefix = span + "<table>\n"
       val suffix = "</table>\n" + endSpan
-      quotedi.mkString(prefix,  " ", suffix) 
+      quotedi.mkString(prefix,  " ", suffix)
     }
-  }       
-  
+  }
+
   def toXML: String = {
       val jvalue = JsonParser.parse(toJSON)
       "<users>" + Xml.toXml(jvalue).toString + "</users>"
-  }  
-  
+  }
+
  /* supports json and xml at the moment */
   def to(mediaType:MediaType): String = {
       val formatExtension:String = mediaType.subType
@@ -65,23 +65,24 @@ class UserList(i: Iterator[UserRef], page: Int, size: Int) {
           case "html" =>  toHTML
           case _ => "Unsupported media type: " + formatExtension
         }
-    }     
-  
-  lazy val totalResults: Long = UserModel().userCount()   
-  
-   /** format a returned user from the db list as an html table row item */
-  private def buildHtmlTr(u: UserRef): String = 
-    s"<tr><td>${u.name}</td><td>${u.email}</td><td>${u.valid}</td></tr>\n"       
- 
-  // private val pageInfoJSON:String = " \"pagination\" : { \"page\""  + ": \"" + page + "\" ," + "\"size\""  + ": \"" + size + "\" }"
-  private val pageInfoJSON:String = s""""pagination" : { "page": "$page", "size": "$size" }"""
+    }
+
+  lazy val totalResults: Long = UserModel().userCount()
+
+  val maxPages = (totalResults + size - 1) / size
+
+  /** format a returned user from the db list as an html table row item */
+  private def buildHtmlTr(u: UserRef): String =
+    s"<tr><td>${u.name}</td><td>${u.email}</td><td>${u.valid}</td></tr>\n"
+
+  private val pageInfoJSON:String = s""""pagination" : { "page": "$page", "size": "$size", "maxPages": "$maxPages" }"""
   private val pageInfoHTML:String = s"""page="$page" size="$size""""
 }
 
 object UserList {
-  def apply(page: Int, size: Int): UserList = new UserList(UserModel().getUsers(page, size), page, size) 
+  def apply(page: Int, size: Int): UserList = new UserList(UserModel().getUsers(page, size), page, size)
 
-  implicit val UserListMarshaller = {  
+  implicit val UserListMarshaller = {
      val canMarshalTo = Array (ContentType(MediaTypes.`text/xml`),
                                ContentType(MediaTypes.`text/html`),
                                ContentTypes.`application/json`)
@@ -93,5 +94,5 @@ object UserList {
        }
      }
    }
-  
+
 }

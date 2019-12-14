@@ -103,6 +103,8 @@ class TuneList(i: Iterator[scala.collection.Map[String, String]], genre: String,
 
   lazy val totalResults: Long = TuneModel().count(genre, searchParams)
 
+  val maxPages = (totalResults + size - 1) / size
+
 
   /** format a returned tune from the db list as an html list item (not used) */
   private def buildHtmlLi(cols: scala.collection.Map[String, String]): String = {
@@ -124,7 +126,7 @@ class TuneList(i: Iterator[scala.collection.Map[String, String]], genre: String,
     //"<tr><td><a href=\""  +urlPrefix + id +"\" >"  + tuneId.name + "</a></td><td>" + tuneId.rhythm + "</td><td>" + dateSubmitted + "</td>"  + "</tr>\n"
   }
 
-  private val pageInfoJSON:String = " \"pagination\" : { \"page\""  + ": \"" + page + "\" ," + "\"size\""  + ": \"" + size + "\" }"
+  private val pageInfoJSON:String = s""""pagination" : { "page": "$page", "size": "$size", "maxPages": "$maxPages" }"""
   private val pageInfoHTML:String = "page=\"" + page + "\" " + "size=\"" + size + "\" "
 
   private def formatDate(ts: Long): String = {

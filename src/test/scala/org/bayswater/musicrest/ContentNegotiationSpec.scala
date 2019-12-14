@@ -148,7 +148,7 @@ class ContentNegotiationSpec extends RoutingSpec with MusicRestService {
         mediaType === MediaTypes.`text/xml`
         responseAs[String] must contain("<tunes>")
         responseAs[String] must contain("""<uri>noon+lasses-reel</uri>""")
-        responseAs[String] must contain("""<pagination><page>1</page><size>10</size></pagination>""")
+        responseAs[String] must contain("""<pagination><page>1</page><size>10</size><maxPages>1</maxPages></pagination>""")
         checkPaginationHeader(header("Musicrest-Pagination"))
       }
     }

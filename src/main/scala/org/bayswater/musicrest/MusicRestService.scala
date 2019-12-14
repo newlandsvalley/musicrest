@@ -197,9 +197,8 @@ trait MusicRestService extends HttpService with CORSDirectives {
         parameters('sort ? "alpha", 'page ? 1, 'size ? MusicRestSettings.defaultPageSize) { (sort, page, size) =>
           get {
             val tuneList = TuneList(genre, sort, page, size)
-            val totalPages = (tuneList.totalResults + size - 1) / size
             corsFilter(MusicRestSettings.corsOrigins) {
-              respondWithHeader(paginationHeader(page, totalPages)) {
+              respondWithHeader(paginationHeader(page, tuneList.maxPages)) {
                 ctx => ctx.complete(tuneList)
                 }
               }
@@ -399,8 +398,7 @@ trait MusicRestService extends HttpService with CORSDirectives {
               // System.out.println("request for page: " + page)
               ctx.complete {
                 val tuneList = TuneList(genre, searchParams, sort, page, size)
-                val totalPages = (tuneList.totalResults + size - 1) / size
-                val headers = List(paginationHeader(page, totalPages))
+                val headers = List(paginationHeader(page, tuneList.maxPages))
                 (200, headers, tuneList)
                 }
               }
@@ -583,8 +581,7 @@ trait MusicRestService extends HttpService with CORSDirectives {
           get {
             authenticate(BasicAuth(AdminAuthenticator, "musicrest")) { user =>
               val userList = UserList(page, size)
-              val totalPages = (userList.totalResults + size - 1) / size
-              respondWithHeader(paginationHeader(page, totalPages)) {
+              respondWithHeader(paginationHeader(page, userList.maxPages)) {
                 corsFilter(MusicRestSettings.corsOrigins) {
                   ctx => ctx.complete(userList)
                 }
