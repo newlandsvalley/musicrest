@@ -32,7 +32,7 @@ class UserList(i: Iterator[UserRef], page: Int, size: Int) {
         ", " + formatJSON("email", userRef.email) +
         ", "  + formatJSON("valid", userRef.valid) + "}\n"
     })
-    quotedi.mkString("{ \"user\": [", ",", "], " + pageInfoJSON + "  }")
+    quotedi.mkString("{ \"users\": [", ",", "], " + pageInfoJSON + "  }")
   }
 
    /** return the user list as a set of tabular tr row items  */

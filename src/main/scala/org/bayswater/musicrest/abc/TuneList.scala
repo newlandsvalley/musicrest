@@ -54,7 +54,7 @@ class TuneList(i: Iterator[scala.collection.Map[String, String]], genre: String,
       case (TuneModel.tuneKey, x) => TuneRef.formatId(x)
       case (a, b)     => TuneRef.formatJSON(a, b)
     }).mkString("{", ",", "}"))
-    quotedi.mkString("{ \"tune\": [", ",", "], " + pageInfoJSON + "  }")
+    quotedi.mkString("{ \"tunes\": [", ",", "], " + pageInfoJSON + "  }")
   }
 
   /** return the tune list as a set of li items (not used) */
