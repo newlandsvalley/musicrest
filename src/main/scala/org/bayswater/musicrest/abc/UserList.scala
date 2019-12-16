@@ -75,7 +75,7 @@ class UserList(i: Iterator[UserRef], page: Int, size: Int) {
   private def buildHtmlTr(u: UserRef): String =
     s"<tr><td>${u.name}</td><td>${u.email}</td><td>${u.valid}</td></tr>\n"
 
-  private val pageInfoJSON:String = s""""pagination" : { "page": "$page", "size": "$size", "maxPages": "$maxPages" }"""
+  private val pageInfoJSON:String = s""""pagination" : { "page": $page, "size": $size, "maxPages": $maxPages }"""
   private val pageInfoHTML:String = s"""page="$page" size="$size""""
 }
 
