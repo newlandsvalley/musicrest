@@ -109,7 +109,7 @@ object Email {
   }
   
   object MusicRestMailAuthenticator extends Authenticator {
-    override def getPasswordAuthentication(): PasswordAuthentication =  new PasswordAuthentication(musicRestSettings.mailLogin, hardCodedSettings.mailPassword)    
+    override def getPasswordAuthentication(): PasswordAuthentication =  new PasswordAuthentication(musicRestSettings.mailLogin, musicRestSettings.mailPassword)    
   }
 
 }
