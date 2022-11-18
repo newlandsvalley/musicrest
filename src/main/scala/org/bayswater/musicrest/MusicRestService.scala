@@ -664,6 +664,13 @@ trait MusicRestService extends HttpService with CORSDirectives {
               }
             }
           }
+        } ~
+        options {
+          corsOptionsFilter(MusicRestSettings.corsOrigins) {
+            _.complete {
+              "options".success
+            }
+          }
         }
       }
     }
