@@ -657,9 +657,11 @@ trait MusicRestService extends HttpService with CORSDirectives {
       path ("user" / Segment ) {  uname =>
         delete {
           authenticate(BasicAuth(AdminAuthenticator, "musicrest")) { user =>
-            val name = java.net.URLDecoder.decode(uname, "UTF-8")
-            complete {
-              User.deleteUser(name)
+            corsFilter(MusicRestSettings.corsOrigins) {
+              val name = java.net.URLDecoder.decode(uname, "UTF-8")
+              complete {
+                User.deleteUser(name)
+              }
             }
           }
         }
