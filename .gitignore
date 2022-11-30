@@ -11,7 +11,7 @@
 /conf/musicrest-local.conf
 /src/main/scala/org/bayswater/musicrest/HardCodedSettings.scala
 target/
-cache/
+/cache/
 deprecated/
 lib_managed/
 src_managed/
