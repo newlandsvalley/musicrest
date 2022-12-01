@@ -1,13 +1,7 @@
 
-import AssemblyKeys._
-
-assemblySettings
-
-test in assembly := {}
-
 name  := "musicrest-2.11"
 
-version := "1.3.1"
+version := "1.3.2"
 
 organization  := "org.bayswater.musicrest"
 
@@ -16,7 +10,8 @@ scalaVersion  := "2.11.7"
 scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8")
 
 resolvers ++= Seq(
-  "spray repo" at "http://repo.spray.io/",
+   ("spray repo" at 
+  "http://repo.spray.io/").withAllowInsecureProtocol(true),
   // for temporary Casbah
   "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/"
 )
@@ -46,4 +41,4 @@ javaOptions in Test += "-Dconfig.file=/home/john/Development/Workspace/Spray/mus
 
 scalacOptions in Test ++= Seq("-Yrangepos")
 
-net.virtualvoid.sbt.graph.Plugin.graphSettings
+assembly / test := {}

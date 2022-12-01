@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 org.bayswater
+ * Copyright (C) 2011-2022 org.bayswater
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import spray.httpx.marshalling._
 
 class Welcome {
 
-  val version = "1.3.1"
+  val version = "1.3.2"
 
   val welcomeMessage = s"MusicRest version $version using spray-routing on spray-can"
 

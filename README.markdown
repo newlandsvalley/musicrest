@@ -149,7 +149,7 @@ There is no web front end included within this project.  However [tradtunedb](ht
 
 #### _Source Code_
 
-Code is written in scala 2.11.7 and built with sbt.   
+Code is written in scala 2.11.7 and built with sbt (currently 1.8.0).   
 
 ```
    "io.spray"            %   "spray-can_2.11"     % "1.3.4",
