@@ -298,15 +298,9 @@ class AbcSubmission (genre: String,
                      ) {
     // def title:Option[String] = headers.get("T")
     // this is misleading - we don't have or use _id at this stage
-    // def id:Option[String] = headers.get("_id")
     def tuneIndex:Option[String] = headers.get("X")
     def tuneKey:Option[String] = headers.get("K")
     def rhythm:Option[String] = headers.get("R")
-
-    private def checkIndex() : \/[String, AbcSubmission] = tuneIndex match {
-      case None => "no tune index".left
-      case Some(i) => if (i == "1") this.right else ("Invalid index: " + i).left
-    }
 
     private def checkKeySignature() : \/[String, AbcSubmission] = tuneKey match {
 
