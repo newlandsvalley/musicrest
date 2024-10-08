@@ -5,9 +5,9 @@ version := "1.3.2"
 
 organization  := "org.bayswater.musicrest"
 
-scalaVersion  := "2.11.7"
+scalaVersion  := "2.11.12"
 
-scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8")
+scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8", "-feature")
 
 resolvers ++= Seq(
    ("spray repo" at 

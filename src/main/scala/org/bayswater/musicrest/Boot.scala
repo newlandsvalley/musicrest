@@ -24,6 +24,8 @@ import java.util.concurrent.TimeUnit;
 import spray.can.Http
 import org.bayswater.musicrest.cache.{CacheClearActor, CacheClearMessage}
 import org.bayswater.musicrest.model.TuneModel
+// line below should remove feature warninga
+import scala.language.postfixOps
 
 object Boot extends App {
   //Use the system's dispatcher as ExecutionContext for the scheduler
