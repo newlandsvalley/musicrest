@@ -17,6 +17,7 @@
 package org.bayswater.musicrest.abc
 
 import scala.util.matching.Regex
+import scala.util.parsing.combinator._
 import scala.collection.mutable.{StringBuilder, MapBuilder}
 import scalaz._
 import Scalaz._
@@ -24,6 +25,7 @@ import spray.http.MediaType
 import com.mongodb.casbah.Imports._
 
 import java.io.{File,BufferedInputStream}
+// import org.bayswater.musicrest.abc.HeaderParser
 import org.bayswater.musicrest.MusicRestSettings
 import org.bayswater.musicrest.typeconversion.Transcoder
 import org.bayswater.musicrest.cache.Cache._
@@ -297,40 +299,19 @@ class AbcSubmission (genre: String,
                      abcCount: Int
                      ) {
     // def title:Option[String] = headers.get("T")
-    // this is misleading - we don't have or use _id at this stage
-    def tuneIndex:Option[String] = headers.get("X")
+    // def tuneIndex:Option[String] = headers.get("X")
     def tuneKey:Option[String] = headers.get("K")
     def rhythm:Option[String] = headers.get("R")
 
-    private def checkKeySignature() : \/[String, AbcSubmission] = tuneKey match {
-
+    private def checkKeySignature() : \/[String, String] = tuneKey match {        
       case None => "No key Signature present in abc".left
-
-      case Some(k) => {
-        if (4 > k.length)  {
-          ("Unrecognized key signature: " + k).left
-        }
-        else {
-          val key = k.head.toUpper
-          val mode = k.slice(1,4).toLowerCase
-          if (!List('A', 'B', 'C', 'D', 'E', 'F', 'G').contains(key)) {
-             ("Unrecognized key signature: " + k).left
-          }
-          else if (!List("dor", "maj", "min", "mix", "phr").contains(mode)) {
-             ("Unrecognized key signature: " + k).left
-          }
-          else
-            this.right
-        }
-      }
+      case Some(k) => KeySigParser.validate (k)
     }
-
 
     private def checkCount() : \/[String, AbcSubmission] = abcCount match {
       case 0 => "No tunes present in abc".left
       case c => if (c == 1) this.right else ("More than one tune supplied: " + c).left
     }
-
 
     private def checkTitles() : \/[String, List[String]] =
       if (titles.isEmpty) {
@@ -347,7 +328,6 @@ class AbcSubmission (genre: String,
           titles.toList.right
         }
       }
-
 
     private def checkRhythm() : \/[String, String] = rhythm match {
       case None => "No rhythm (R header) present in abc".left
@@ -370,7 +350,6 @@ class AbcSubmission (genre: String,
       ).validation
 
 }
-
 
 object AbcSubmission {
 
@@ -407,12 +386,13 @@ object AbcSubmission {
             sbHeaders.append(cleanLine + "\n")
             }
           case tuneKeyExtractor(hname, hvalue) => {
-            // normalise major and minor key representations
+            // normalise major and minor key representations - we limit ourselves to keys 
+            // substantially found in common western traditional tune archives
             val kvalue = hvalue.trim()
             val tuneKey =
-               if (List("A", "B", "C", "D", "E", "F", "G").contains(kvalue))
+               if (List("A", "B", "Bb", "C", "D", "E", "Eb", "F", "F#", "G").contains(kvalue))
                  kvalue + "maj"
-               else if (List("Am", "Bm", "Cm", "Dm", "Em", "Fm", "Gm").contains(kvalue))
+               else if (List("Am", "Bm", "Cm", "Dm", "Em", "Fm", "F#m", "Gm").contains(kvalue))
                  kvalue + "in"
                else
                  kvalue
@@ -470,6 +450,18 @@ object AbcSubmission {
 
     // JSON doesn't allow embedded double quotes so we'll replace with single quotes
     def replaceDoubleQuotes(s:String): String = s.foldLeft("")((b, a) => if (a == '"') b + ''' else b + a )
-
-
 }
+
+/* validate a K; key signature header by parsing its component parts */
+object KeySigParser extends HeaderParser {
+  def validate (tuneKey: String) : \/[String, String] = {
+    // keySig is the root of the key signature parser
+    parseAll(keySig, tuneKey) match {
+      case Success (msg, next) => tuneKey.right
+      case Failure (msg, next) => (msg).left
+      case Error (msg, next) => ("key parser fatal error: " + msg).left
+      case _ => ("unexpected key parse result").left
+    }
+  }
+}
+
