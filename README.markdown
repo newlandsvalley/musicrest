@@ -12,7 +12,7 @@ Author: John Watson <john.watson@gmx.co.uk>
 
 #### _Genres and Rhythms_
 
-Although MusicRest is potentially useful for any genre of music, the current release is restricted to four - _Irish, Scandi, Scottish_ and _Klezmer_.  Each genre is configured with a set of standard rhythms for the genre - for example, whilst Irish uses _jigs, reels, hornpipes_ etc., Scandi uses _polska, marsch, schottis_ etc.  Tunes in each genre are kept in separate collections; when posting a new tune, you must supply an appropriate rhythm (ABC's  _R_ header).
+Although MusicRest is potentially useful for any genre of music, the current release is restricted to five - _English, Irish, Scandi, Scottish_ and _Klezmer_.  Each genre is configured with a set of standard rhythms for the genre - for example, whilst Irish uses _jigs, reels, hornpipes_ etc., Scandi uses _polska, marsch, schottis_ etc.  Tunes in each genre are kept in separate collections; when posting a new tune, you must supply an appropriate rhythm (ABC's  _R_ header).
 
 #### _URL Scheme_
 
