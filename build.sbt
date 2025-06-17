@@ -1,7 +1,7 @@
 
 name  := "musicrest-2.11"
 
-version := "1.3.4"
+version := "1.3.5"
 
 organization  := "org.bayswater.musicrest"
 

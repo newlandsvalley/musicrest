@@ -21,7 +21,7 @@ import spray.httpx.marshalling._
 
 class Welcome {
 
-  val version = "1.3.2"
+  val version = "1.3.5"
 
   val welcomeMessage = s"MusicRest version $version using spray-routing on spray-can"
 
