@@ -99,11 +99,13 @@ Linux is required for its transcoding services. MusicRest has been tested under 
 
 The _scripts_ directory contains shell scripts that invoke the transcoding services.  You must be sure to make these executable  ( _chmod +x_ )
 
+#### _Reverse-Proxy_
+
+As from version 1.3.5, Musicrest assumes it is accessed via a reverse-proxy server. This allows the service to appear to live at `https://www.tradtunedb.org.uk/musicrest` and the proxy forwards traffic to  `http://www.tradtunedb.org.uk:8080/musicrest`.  This also obviates the need for CORS headers (see below).  Musicrest itself is not SSL-enabled, and so the reverse-proxy is the most straightforward way of letting it live within the security blanket of the frontend.
+
 #### _Configuration_
 
 This is by means of _musicrest.conf_ which must be supplied as a JVM -D startup parameter. The settings are largely self explanatory.  The cache directory for transcode indicates that the transcoding scripts are file-based and the results of such scripts are allowed to remain in the file cache. Once the cache reaches its maximum allowed size for a time dependent on _cacheClearInterval_ (a time in minutes) then the cache is cleared. Setting this to zero disables cache clearance. Get tune requests are served from the cache where this is possible. If you are supporting the generation of _wav_ responses, you probably need to clear the cache periodically because of the large number of bulky .wav files that can be generated.
-
-As from version 1.3.5, Musicrest assumes it is accessed via a reverse-proxy server. This allows the service to appear to live at `https://www.tradtunedb.org.uk/musicrest` and the proxy forwards traffic to  `http://www.tradtunedb.org.uk:8080/musicrest`.  This also obviates the need for CORS headers (see below).
 
 Email is used simply to finish user registration or to remind users of passwords.  Email settings must of course be valid for the carrier in question.  The URL contained in the email to complete the registration process uses the proxy address.
 
