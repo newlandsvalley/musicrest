@@ -1,5 +1,7 @@
 ## _MusicRest_
 
+MusicRest is reaching the end of its life and will soon be deprecated in favour of [tunebank-node](https://github.com/newlandsvalley/tunebank-node).
+
 This is a RESTful web service which allows you to upload traditional tunes in [ABC](http://abcnotation.com/) notation and then have them transcoded into a variety of formats.  In particular, you can use MusicRest to see a tune score in **pdf**, **ps** or **png** format or to listen to the tune (using a variety of tempi and instruments) in **wav** or **midi** format. It supports two different approaches for doing this:  
 
 1. _Content Negotiation_.  You issue a request to the tune's URL and set the *Accept* request header to the required content type.
